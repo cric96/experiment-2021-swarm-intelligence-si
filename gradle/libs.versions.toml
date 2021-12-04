@@ -1,14 +1,14 @@
 [versions]
 alchemist = "11.3.1"
 kotlin = "1.6.0"
+scala = "2.13.4"
 
 [libraries]
 alchemist = { module = "it.unibo.alchemist:alchemist", version.ref = "alchemist" }
-alchemist-protelis = { module = "it.unibo.alchemist:alchemist-incarnation-protelis", version.ref = "alchemist" }
 alchemist-scafi = { module = "it.unibo.alchemist:alchemist-incarnation-scafi", version.ref = "alchemist" }
-
+scala-compiler = { module = "org.scala-lang:scala-library", version.ref = "scala"}
 [bundles]
-alchemist-protelis = [ "alchemist", "alchemist-protelis" ]
+alchemist-scafi = [ "alchemist", "alchemist-scafi", "scala-compiler" ]
 
 [plugins]
 gitSemVer = { id = "org.danilopianini.git-sensitive-semantic-versioning", version = "0.3.0" }

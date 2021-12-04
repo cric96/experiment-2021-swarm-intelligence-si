@@ -3,25 +3,14 @@ import java.io.ByteArrayOutputStream
 
 plugins {
     application
+    scala
     alias(libs.plugins.gitSemVer)
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.qa)
-    alias(libs.plugins.multiJvmTesting)
     alias(libs.plugins.taskTree)
 }
 
 repositories {
     mavenCentral()
-}
-/*
- * Only required if you plan to use Protelis, remove otherwise
- */
-sourceSets {
-    main {
-        resources {
-            srcDir("src/main/protelis")
-        }
-    }
 }
 
 val usesJvm: Int = File(File(projectDir, "util"), "Dockerfile")
@@ -32,16 +21,10 @@ val usesJvm: Int = File(File(projectDir, "util"), "Dockerfile")
     }
     .toInt()
 
-multiJvm {
-    jvmVersionForCompilation.set(usesJvm)
-}
-
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation(libs.bundles.alchemist.protelis)
-    if (!GraphicsEnvironment.isHeadless()) {
-        implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
-    }
+    implementation(libs.bundles.alchemist.scafi)
+    implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
 }
 
 // Heap size estimation for batches
