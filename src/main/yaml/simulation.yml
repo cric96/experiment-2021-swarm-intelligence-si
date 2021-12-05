@@ -26,7 +26,7 @@ layers:
     molecule: temperature-2
 
   - type: BidimensionalGaussianLayer
-    parameters: [ 0.0, 2.0, 3.5, -4.0, 2.0, 2.0, 1.0 ]
+    parameters: [ 2.0, 3.5, -2.0, 1.0 ]
     molecule: temperature-3
 
   - type: BidimensionalGaussianLayer
