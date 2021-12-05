@@ -95,7 +95,7 @@
       "val": 11
     },
     "molFilter": true,
-    "molString": "org:protelis:tutorial:distanceTo",
+    "molString": "it.casestudy.BaseProgram",
     "molPropertyFilter": true,
     "property": "",
     "writingPropertyValue": false,
