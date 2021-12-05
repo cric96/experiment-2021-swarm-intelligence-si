@@ -31,9 +31,7 @@ multiJvm {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.bundles.alchemist.bundle)
-    if (!GraphicsEnvironment.isHeadless()) {
-        implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
-    }
+    implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
 }
 
 // Heap size estimation for batches
