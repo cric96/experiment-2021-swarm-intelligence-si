@@ -7,12 +7,14 @@ scala = "2.13.4"
 alchemist = { module = "it.unibo.alchemist:alchemist", version.ref = "alchemist" }
 alchemist-scafi = { module = "it.unibo.alchemist:alchemist-incarnation-scafi", version.ref = "alchemist" }
 scala-compiler = { module = "org.scala-lang:scala-library", version.ref = "scala"}
+
 [bundles]
-alchemist-scafi = [ "alchemist", "alchemist-scafi", "scala-compiler" ]
+alchemist-bundle = [ "alchemist", "alchemist-scafi", "scala-compiler" ]
 
 [plugins]
 gitSemVer = { id = "org.danilopianini.git-sensitive-semantic-versioning", version = "0.3.0" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-qa = { id = "org.danilopianini.gradle-kotlin-qa", version = "0.8.0" }
+scalafmt = { id = "cz.alenkacz.gradle.scalafmt", version = "1.16.2" }
 multiJvmTesting = { id = "org.danilopianini.multi-jvm-test-plugin", version = "0.2.1" }
 taskTree = { id = "com.dorongold.task-tree", version = "2.1.0" }
