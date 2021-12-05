@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 plugins {
     application
     scala
+    id("cz.alenkacz.gradle.scalafmt") version "1.16.2"
     alias(libs.plugins.gitSemVer)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.taskTree)
@@ -24,7 +25,9 @@ val usesJvm: Int = File(File(projectDir, "util"), "Dockerfile")
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.bundles.alchemist.scafi)
-    implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
+    if (!GraphicsEnvironment.isHeadless()) {
+        implementation("it.unibo.alchemist:alchemist-swingui:${libs.versions.alchemist.get()}")
+    }
 }
 
 // Heap size estimation for batches
@@ -101,3 +104,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
         }
         runAllBatch.dependsOn(batch)
     }
+// add scalafmt dependencies
+tasks.withType<ScalaCompile>() {
+    dependsOn(tasks.named("scalafmtAll"))
+}
