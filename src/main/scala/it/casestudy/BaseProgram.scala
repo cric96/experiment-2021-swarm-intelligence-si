@@ -22,11 +22,15 @@ class BaseProgram
     // Start new process when a new local minimum is found
     val clusterStarter = mux(candidate) { Set(ClusterStart(mid(), temperature)) } { Set.empty[ClusterStart] }
     val clusters =
-      branch(T(10) <= 0) { // TODO FIX => it helps to avoid initial cluster instantiation (indeed at the beginning, each node is a local minimum)
-        temperatureCluster2(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
+      temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
+    /*
+      // waiting some time, helps to avoid "fake" candidates (at the begging, each node is a candidate because no neighbourhood is detected and so each node is a local minimum
+      branch(T(10) <= 0) {
+        temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
       } {
         Map.empty
       }
+     */
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
     val coldestCluster = clusters.minByOption(
       _._1.temperature
@@ -45,46 +49,6 @@ class BaseProgram
   override def sense[A](name: String): A = {
     Try { vm.localSense[A](name) }.orElse { Try { senseEnvData[A](name) } }.get
   }
-  /*
-   * It creates temperature cluster following this condition:
-   *  0 <= d'.m() - d.m() <= w
-   * where d' is the current node where the process is evaluated and d is the cluster center.
-   */
-  def temperatureCluster(start: Set[ClusterStart], input: ClusterInput): Map[ClusterStart, ClusterInformation] = {
-    val spawnLogic: ClusterStart => ClusterInput => (ClusterInformation, Boolean) = {
-      case ClusterStart(leader, minTemperature) => { case ClusterInput(temperature, threshold, _) =>
-        val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-        val difference = temperature - minTemperature
-        (ClusterInformation(distanceFromLeader), difference >= 0.0 && difference <= threshold)
-      }
-    }
-    spawn[ClusterStart, ClusterInput, ClusterInformation](spawnLogic, start, input)
-  }
-  /*
-    uses sspawn for handling leader changes ==> handle leader changes
-   */
-  def temperatureCluster2(
-    start: Set[ClusterStart],
-    input: ClusterInput
-  ): Map[ClusterStart, ClusterInformation] = {
-    val spawnLogic: ClusterStart => ClusterInput => POut[ClusterInformation] = {
-      case ClusterStart(leader, minTemperature) => { case ClusterInput(temperature, threshold, wasCandidate) =>
-        // this condition is used to change leader.
-        // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
-        mux(!wasCandidate && leader == mid()) {
-          POut(ClusterInformation(-1), SpawnInterface.Terminated)
-        } {
-          val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-          val difference = temperature - minTemperature
-          val status = if (difference >= 0.0 && difference <= threshold) { SpawnInterface.Output }
-          else { SpawnInterface.External }
-          POut(ClusterInformation(distanceFromLeader), status)
-        }
-      }
-    }
-    sspawn2(spawnLogic, start, input)
-  }
-
   def isCandidate(): Boolean = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val temperatureNeighbourField = includingSelf.reifyField(nbr { temperature })
@@ -105,6 +69,33 @@ class BaseProgram
     }
   }
 
+  /*
+   * uses sspawn for handling leader changes ==> handle leader changes
+   * It creates temperature cluster following this condition:
+   *  0 <= d'.m() - d.m() <= w
+   * where d' is the current node where the process is evaluated and d is the cluster center.
+   */
+  def temperatureCluster(
+    start: Set[ClusterStart],
+    input: ClusterInput
+  ): Map[ClusterStart, ClusterInformation] = {
+    val spawnLogic: ClusterStart => ClusterInput => POut[ClusterInformation] = {
+      case ClusterStart(leader, minTemperature) => { case ClusterInput(temperature, threshold, wasCandidate) =>
+        // this condition is used to change leader.
+        // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
+        mux(!wasCandidate && leader == mid()) {
+          POut(ClusterInformation(-1), SpawnInterface.Terminated)
+        } {
+          val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
+          val difference = temperature - minTemperature
+          val status = if (difference >= 0.0 && difference <= threshold) { SpawnInterface.Output }
+          else { SpawnInterface.External }
+          POut(ClusterInformation(distanceFromLeader), status)
+        }
+      }
+    }
+    sspawn2(spawnLogic, start, input)
+  }
 }
 
 object BaseProgram {
