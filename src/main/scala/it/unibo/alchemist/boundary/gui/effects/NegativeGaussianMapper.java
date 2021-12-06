@@ -29,7 +29,6 @@ public class NegativeGaussianMapper implements LayerToFunctionMapper {
                     .mapToDouble(l -> l.getValue(env.makePosition(l.getCenterX(), l.getCenterY())))
                     .min()
                     .orElse(0);
-            System.out.println(minValue);
             effect.setMinLayerValue("0");
             effect.setMaxLayerValue("" + minValue * -1);
             maxMinToSet = false;
