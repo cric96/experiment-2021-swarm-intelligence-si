@@ -1,6 +1,6 @@
 package it.unibo.alchemist.boundary.gui.effects;
 
-public class NegativeGaussianLayerEffect extends DrawLayersGradient{
+public class NegativeGaussianLayerEffect extends DrawLayersGradient {
     public NegativeGaussianLayerEffect() {
         super();
     }
