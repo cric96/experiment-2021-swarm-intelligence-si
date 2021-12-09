@@ -3,7 +3,7 @@
 This repository contains the first experiment that explores the clustering techniques
 applied in Aggregate Computing.
 
-This work start from this [idea](https://github.com/metaphori/paper-2021-swarm-intelligence-si/blob/master/_Brainstorming/algorithm1.txt)
+This work starts from this [idea](https://github.com/metaphori/paper-2021-swarm-intelligence-si/blob/master/_Brainstorming/algorithm1.txt)
 
 In [Experiments](#experiments) I briefly discuss the current state of the simulation performed.
 Each entry has the form of: 
@@ -12,8 +12,8 @@ Each entry has the form of:
 
 For run a simulation, you can write ./gradlew run<SimulationFile> 
 (I leave the command at the end of each section).
-The experiment body is structered as:
-- current status: (:+1: ok, clustering seems to work, :-1: ko, clustering do not find good clusters, :open_hands: the experiment lead to no conclusion)
+The experiment body is structured as:
+- current status: (:+1: ok, clustering seems to work; :-1: ko, clustering do not find good clusters; :open_hands: the experiment lead to no conclusion)
 - a brief description of the simulation setup (nodes, clusters to find, ...)
 - simulation snapshots
 In [Todo](#todo) is present the relevant works that will have to do.
@@ -26,7 +26,7 @@ In [Problems](#problems) I underline the limitations/current problem that we hav
 
 :+1:
 
-In this experiment there are five disjointed cluster that follows a gaussian distribution.
+In this experiment, there are five disjointed clusters that follows a gaussian distribution.
 
 ```
 ./gradlew runStandardPatternsGraphic 
@@ -38,7 +38,7 @@ In this experiment there are five disjointed cluster that follows a gaussian dis
 
 :+1:
 
-In this experiment there are four joined cluster that follows a gaussian distribution.
+In this experiment, there are four joined clusters that follow a gaussian distribution.
 Moreover, there is one disjointed cluster from the others.
 
 
@@ -51,7 +51,7 @@ Moreover, there is one disjointed cluster from the others.
 
 :+1:
 
-In this experiment there are four disjointed clusters with a gaussian distribution but stretched.
+In this experiment, there are four disjointed clusters with a gaussian distribution but stretched.
 
 ```
 ./gradlew runStretchedOutPatternsGraphic 
@@ -62,7 +62,7 @@ In this experiment there are four disjointed clusters with a gaussian distributi
 
 :-1:
 
-In this experiment there is one cluster with a uniform value (convex, a rectangle).
+In this experiment, there is one cluster with a uniform value (convex, a rectangle).
 Due to the fact the cluster is uniform, the candidate selection goes wrong, and the program finds more pattern (3). 
 ```
 ./gradlew runUniformLayersGraphic 
