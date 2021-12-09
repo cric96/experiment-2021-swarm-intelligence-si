@@ -28,6 +28,7 @@ In [Problems](#problems) I underline the limitations/current problem that we hav
 
 In this experiment, there are five disjointed clusters that follows a gaussian distribution.
 
+![Experiment Image](./readme/img/gaussian.png)
 ```
 ./gradlew runStandardPatternsGraphic 
 ```
@@ -42,6 +43,7 @@ In this experiment, there are four joined clusters that follow a gaussian distri
 Moreover, there is one disjointed cluster from the others.
 
 
+![Experiment Image](./readme/img/overlay.png)
 ```
 ./gradlew runOverlayPatternsGraphic 
 ```
@@ -53,6 +55,8 @@ Moreover, there is one disjointed cluster from the others.
 
 In this experiment, there are four disjointed clusters with a gaussian distribution but stretched.
 
+
+![Experiment Image](./readme/img/gaussian-stretched.png)
 ```
 ./gradlew runStretchedOutPatternsGraphic 
 ```
