@@ -67,7 +67,8 @@ In this experiment, there are four disjointed clusters with a gaussian distribut
 :-1:
 
 In this experiment, there is one cluster with a uniform value (convex, a rectangle).
-Due to the fact the cluster is uniform, the candidate selection goes wrong, and the program finds more pattern (3). 
+Due to the fact the cluster is uniform, the candidate selection goes wrong, and the program finds more pattern (3).
+![Experiment Image](./readme/img/uniforms.png)
 ```
 ./gradlew runUniformLayersGraphic 
 ```
@@ -79,6 +80,7 @@ Due to the fact the cluster is uniform, the candidate selection goes wrong, and 
 
 This experiment is similar to [Uniform Layers Distribution](#uniform-layers-distribution), but the cluster share is non-convex.
 So, as the previous example, the program cannot find correct cluster distribution.
+![Experiment Image](./readme/img/non-convex.png)
 ```
 ./gradlew runUniformLayersGraphic 
 ```
