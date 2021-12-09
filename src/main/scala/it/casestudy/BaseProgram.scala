@@ -15,6 +15,7 @@ class BaseProgram
     with StateManagement {
   implicit val precision: Precision = Precision(0.000001)
   private val threshold = 1
+  private val waitingTime = 5
 
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
@@ -22,15 +23,12 @@ class BaseProgram
     // Start new process when a new local minimum is found
     val clusterStarter = mux(candidate) { Set(ClusterStart(mid(), temperature)) } { Set.empty[ClusterStart] }
     val clusters =
-      temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
-    /*
-      // waiting some time, helps to avoid "fake" candidates (at the begging, each node is a candidate because no neighbourhood is detected and so each node is a local minimum
-      branch(T(10) <= 0) {
+      // waiting some time, helps to avoid "fake" candidates (initially, each node is a candidate because no neighbourhood is detected and so each node is a local minimum
+      branch(T(waitingTime) <= 0) {
         temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
       } {
         Map.empty
       }
-     */
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
     val coldestCluster = clusters.minByOption(
       _._1.temperature
