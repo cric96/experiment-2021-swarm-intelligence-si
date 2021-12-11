@@ -10,9 +10,12 @@ class BaseProgram
     with ScafiAlchemistSupport
     with FieldUtils
     with Gradients
+    with BlockG
+    with BlockC
     with CustomSpawn
     with TimeUtils
-    with StateManagement {
+    with StateManagement
+    with ClusteringLib {
   implicit val precision: Precision = Precision(0.000001)
   private val threshold = 1
   private val waitingTime = 5
@@ -33,6 +36,7 @@ class BaseProgram
     val coldestCluster = clusters.minByOption(
       _._1.temperature
     )
+    // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
     node.put("clusters", clusters.keys.mkString(","))
@@ -85,8 +89,7 @@ class BaseProgram
           POut(ClusterInformation(-1), SpawnInterface.Terminated)
         } {
           val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-          val difference = temperature - minTemperature
-          val status = if (difference >= 0.0 && difference <= threshold) { SpawnInterface.Output }
+          val status = if (inCluster(temperature, minTemperature, threshold)) { SpawnInterface.Output }
           else { SpawnInterface.External }
           POut(ClusterInformation(distanceFromLeader), status)
         }
@@ -94,6 +97,36 @@ class BaseProgram
     }
     sspawn2(spawnLogic, start, input)
   }
+
+  // example of fluent disjoint cluster API
+  def disjointedClusters(candidate: Boolean, temperature: Double, threshold: Double): Option[ID] = {
+    cluster.disjoint
+      .candidate(candidate)
+      .broadcast(temperature)
+      .join(leaderTemperature => inCluster(temperature, leaderTemperature, threshold))
+      .start()
+  }
+
+  // example of a complex disjoint cluster API
+  def clusterOnNodeNumber(candidate: Boolean, howMany: Int): Option[ID] = {
+    cluster.disjoint
+      .candidate(candidate)
+      .broadcast(0)
+      .accumulate(_ + 1)
+      .join(potential => {
+        val ids = C[Int, Set[(Double, Int)]](potential, _ ++ _, Set((potential, mid())), Set.empty)
+        val acceptedIds = mux(candidate) { ids.toList.sortBy(_._1).take(howMany).toSet } { Set.empty }
+        val clusterId = broadcast(candidate, acceptedIds)
+        clusterId.map(_._2).contains(mid())
+      })
+      .start()
+  }
+
+  def inCluster(myTemperature: Double, leaderTemperature: Double, threshold: Double): Boolean = {
+    val difference = myTemperature - leaderTemperature
+    difference >= 0.0 && difference <= threshold
+  }
+
 }
 
 object BaseProgram {
