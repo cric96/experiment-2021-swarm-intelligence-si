@@ -1,6 +1,8 @@
 package it.casestudy
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 import it.casestudy.BaseProgram._
+import it.unibo.alchemist.Alchemist
+import it.unibo.alchemist.loader.Loader
 
 import scala.util.Try
 
@@ -48,7 +50,8 @@ class BaseProgram
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
-    node.put("clusters", clusters.keys.mkString(","))
+    node.put("clusters", clusters.keys)
+
     coldestCluster match {
       case Some((ClusterStart(leader, _), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")

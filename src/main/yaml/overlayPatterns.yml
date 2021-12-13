@@ -1,5 +1,12 @@
 incarnation: scafi
 
+variables:
+  seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
+  simulation_length: &simulation_length { formula: 100.0 }
+seeds: { scenario: *seed, simulation: *seed }
+
+terminate: { type: AfterTime, parameters: [*simulation_length] }
+
 network-model:
   type: ConnectWithinDistance
   parameters: [0.75]
@@ -44,3 +51,10 @@ deployments:
   type: Grid
   parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
   programs: *program
+
+export:
+  - type: it.unibo.alchemist.loader.export.exporters.CSVExporter
+    parameters: ["exporter", 1.0, "./data"]
+    data:
+      - type: Time
+      - type: ClusterCount
