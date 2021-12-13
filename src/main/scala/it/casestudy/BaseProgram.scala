@@ -29,6 +29,15 @@ class BaseProgram
       // waiting some time, helps to avoid "fake" candidates (initially, each node is a candidate because no neighbourhood is detected and so each node is a local minimum
       branch(T(waitingTime) <= 0) {
         temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
+        /*
+        overlapCluster[(Double, Double)](
+          candidate,
+          (temperature, 0.0),
+          id => { case (temperature, _) => (temperature, classicGradient(mid() == id)) },
+          _ => { case (clusterTemperature, _) => inCluster(temperature, clusterTemperature, threshold) },
+          closeCondition = id => _ => mid() == id && !candidate
+        )
+         */
       } {
         Map.empty
       }

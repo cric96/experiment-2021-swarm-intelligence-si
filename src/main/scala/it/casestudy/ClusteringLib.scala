@@ -35,14 +35,16 @@ trait ClusteringLib {
    * Creates cluster (overlapped) identified by the ID of the candidate node
    * @param clusterCandidate a Boolean field that defines if a node is a cluster candidate (i.e. the center of the cluster) or nnot
    * @param clusterField the data necessary to build the cluster (i.e. a temperature field, the potential, ...)
+   * @param fieldAccumulator define how the candidate value spread into the other nodes (you can use identity)
    * @param inCondition define the condition to join in to a particular cluster (id is the cluster ID)
    * @param closeCondition define when a cluster is no longer active (e.g. some underline distribution condition are changed)
    * @tparam V the field type
    * @return a Map of ID -> V where ID is the cluster ID and V is the value of the central node
    */
-  def cluster[V](
+  def overlapCluster[V](
     clusterCandidate: Boolean,
     clusterField: V,
+    fieldAccumulator: ID => V => V,
     inCondition: ID => V => Boolean,
     closeCondition: ID => V => Boolean
   ): Map[ID, V] = {
@@ -53,9 +55,10 @@ trait ClusteringLib {
         mux(closeCondition(id)(value)) {
           POut(value, SpawnInterface.Terminated)
         } {
+          val updateField = fieldAccumulator(id)(value)
           val status = if (inCondition(id)(value)) { SpawnInterface.Output }
           else { SpawnInterface.External }
-          POut(value, status)
+          POut(updateField, status)
         }
       }
     }
@@ -75,7 +78,9 @@ trait ClusteringLib {
     /**
      * overlapped cluster identification
      */
-    object overlapped {}
+    object overlapped {
+      // def candidate(condition: Boolean): CandidateSelected =
+    }
 
     /**
      * disjoint cluster identification
