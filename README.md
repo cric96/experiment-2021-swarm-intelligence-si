@@ -84,13 +84,47 @@ So, as the previous example, the program cannot find correct cluster distributio
 ```
 ./gradlew runUniformLayersGraphic 
 ```
+ 
+### Uniform increasing temperature field
+> *oneDirectionField*
 
+:-1:
+
+In this experiment the temperature field grows from the left to the right uniformly.
+In particular, the temperature at each point is evaluated as:
+
+temp(x, y) = baseValue + (centerX - x) * dx + (centerY - y) * dy
+
+where `dx = 0.1`, `dy = 0.0` and `centerX = centerY = 1`
+![Experiment Image](./readme/img/temperature.gif)
+
+The lighter the color the lower the temperature.
+
+In this experiments, there are more local minima and so multiple cluster are found.
+
+![Experiment Image](readme/img/one-direction-cluster.gif)
+```
+./gradlew runOneDirectionFieldGraphic 
+```
+
+### Uniform increasing temperature field with a local minimum
+> *oneDirectionFieldLocalMinimum*
+
+:+1:
+
+Similar to the previous example, but the temperature grows with dx = dy = 0.05:
+![Experiment Image](./readme/img/temperature-local-minimum.gif)
+In this case, the algorithm works as excepted
+![Experiment Image](readme/img/one-direction-cluster-local-minimum.gif)
+```
+./gradlew runOneDirectionFieldMinimumGraphic 
+```
 
 ## Todo
 - [ ] Use a metric to evaluate the cluster created with Aggregate Computing (see related works for that)
 - [ ] Find a way to plot different clusters (currently you need to inspect each node)
-- [ ] Try to generalise the cluster formation (i.e. candidate selection, in condition, out condition, live condition)
-- [ ] Try to create cluster using G and C (link to the previous work)
+- [x] Try to generalise the cluster formation (i.e. candidate selection, in condition, out condition, live condition)
+- [x] Try to create cluster using G and C (link to the previous work)
 
 ## Problems
 - Initially, there is a lot of noise due to candidate selection.
