@@ -41,7 +41,7 @@ class BaseProgram
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
     node.put("clusters", clusters.keys.map(_.leaderId))
-
+    node.put("fullClustersInfo", clusters)
     coldestCluster match {
       case Some((ClusterStart(leader, _, _), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")

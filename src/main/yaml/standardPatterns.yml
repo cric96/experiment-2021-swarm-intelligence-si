@@ -5,7 +5,7 @@ variables:
   simulation_length: &simulation_length { formula: 100.0 }
 seeds: { scenario: *seed, simulation: *seed }
 
-#terminate: { type: AfterTime, parameters: [*simulation_length] }
+terminate: { type: AfterTime, parameters: [*simulation_length] }
 
 network-model:
   type: ConnectWithinDistance
