@@ -282,5 +282,63 @@
       "value": 2130706687
     },
     "markerNodeID": 0
+  },
+  {
+    "type": "class it.unibo.alchemist.boundary.gui.effects.NegativeGaussianLayerIsolineEffect",
+    "nOfIsolines": {
+      "max": 50,
+      "min": 1,
+      "val": 12
+    },
+    "distribution": "LINEAR",
+    "drawValues": false,
+    "nOfIsolinesCached": 12,
+    "distributionCached": "LINEAR",
+    "levels": [
+      0.0,
+      0.18181818181818182,
+      0.36363636363636365,
+      0.5454545454545454,
+      0.7272727272727273,
+      0.9090909090909092,
+      1.0909090909090908,
+      1.2727272727272727,
+      1.4545454545454546,
+      1.6363636363636365,
+      1.8181818181818183,
+      2.0
+    ],
+    "minLayerValue": "0",
+    "maxLayerValue": "2.0",
+    "minLayerValueCached": "0",
+    "maxLayerValueCached": "2.0",
+    "minLayerValueDouble": 0.0,
+    "maxLayerValueDouble": 2.0,
+    "layerFilter": false,
+    "molString": "",
+    "alpha": {
+      "max": 255,
+      "min": 0,
+      "val": 127
+    },
+    "red": {
+      "max": 255,
+      "min": 0,
+      "val": 0
+    },
+    "green": {
+      "max": 255,
+      "min": 0,
+      "val": 0
+    },
+    "blue": {
+      "max": 255,
+      "min": 0,
+      "val": 255
+    },
+    "colorCache": {
+      "value": 2130706687
+    },
+    "markerNodeID": 0
   }
 ]

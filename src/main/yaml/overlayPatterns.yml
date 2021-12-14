@@ -54,7 +54,7 @@ deployments:
 
 export:
   - type: it.unibo.alchemist.loader.export.exporters.CSVExporter
-    parameters: ["exporter", 1.0, "./data"]
+    parameters: ["overlayPatterns", 1.0, "./data"]
     data:
       - type: Time
       - type: ClusterCount

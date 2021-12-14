@@ -1,8 +1,6 @@
 package it.casestudy
-import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 import it.casestudy.BaseProgram._
-import it.unibo.alchemist.Alchemist
-import it.unibo.alchemist.loader.Loader
+import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
 
@@ -24,25 +22,17 @@ class BaseProgram
 
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
-    val candidate = isCandidate()
+    // "hysteresis" condition, waiting time before starting a process
+    val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
+      false
+    }
     // Start new process when a new local minimum is found
-    val clusterStarter = mux(candidate) { Set(ClusterStart(mid(), temperature)) } { Set.empty[ClusterStart] }
+    val clusterStarter = mux(candidate) { Set(ClusterStart(mid(), temperature, timestamp())) } {
+      Set.empty[ClusterStart]
+    }
     val clusters =
-      // waiting some time, helps to avoid "fake" candidates (initially, each node is a candidate because no neighbourhood is detected and so each node is a local minimum
-      branch(T(waitingTime) <= 0) {
-        temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
-        /*
-        overlapCluster[(Double, Double)](
-          candidate,
-          (temperature, 0.0),
-          id => { case (temperature, _) => (temperature, classicGradient(mid() == id)) },
-          _ => { case (clusterTemperature, _) => inCluster(temperature, clusterTemperature, threshold) },
-          closeCondition = id => _ => mid() == id && !candidate
-        )
-         */
-      } {
-        Map.empty
-      }
+      temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
+
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
     val coldestCluster = clusters.minByOption(
       _._1.temperature
@@ -50,10 +40,10 @@ class BaseProgram
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
-    node.put("clusters", clusters.keys)
+    node.put("clusters", clusters.keys.map(_.leaderId))
 
     coldestCluster match {
-      case Some((ClusterStart(leader, _), _)) => node.put("clusterId", leader)
+      case Some((ClusterStart(leader, _, _), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")
       case _ =>
     }
@@ -83,6 +73,22 @@ class BaseProgram
     }
   }
 
+  /**
+   * check what processes need to be killed
+   * @param processes the process perceived from a node
+   * @return the set of processes that will be killed
+   */
+  def watchDog(processes: Map[ClusterStart, ClusterInformation]): Set[ClusterStart] = {
+    val processesKey = processes.keys.groupBy(_.leaderId).values.flatten
+    val toKeepAlive = processesKey.maxByOption { case ClusterStart(_, _, timestamp) => timestamp }
+    val toKill = toKeepAlive match {
+      case Some(ClusterStart(_, _, timestamp)) =>
+        processesKey.filter { case ClusterStart(_, _, otherProcess: Long) => otherProcess < timestamp }
+      case _ => Set.empty
+    }
+    toKill.toSet
+  }
+
   /*
    * uses sspawn for handling leader changes ==> handle leader changes
    * It creates temperature cluster following this condition:
@@ -94,20 +100,25 @@ class BaseProgram
     input: ClusterInput
   ): Map[ClusterStart, ClusterInformation] = {
     val spawnLogic: ClusterStart => ClusterInput => POut[ClusterInformation] = {
-      case ClusterStart(leader, minTemperature) => { case ClusterInput(temperature, threshold, wasCandidate) =>
-        // this condition is used to change leader.
-        // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
-        mux(!wasCandidate && leader == mid()) {
-          POut(ClusterInformation(-1), SpawnInterface.Terminated)
-        } {
-          val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-          val status = if (inCluster(temperature, minTemperature, threshold)) { SpawnInterface.Output }
-          else { SpawnInterface.External }
-          POut(ClusterInformation(distanceFromLeader), status)
-        }
+      case cluster @ ClusterStart(leader, minTemperature, _) => {
+        case ClusterInput(temperature, threshold, wasCandidate, toKill) =>
+          // this condition is used to change leader.
+          // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
+          mux(leader == mid() && (!wasCandidate || toKill.contains(cluster))) {
+            POut(ClusterInformation(-1), SpawnInterface.Terminated)
+          } {
+            val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
+            val status = if (inCluster(temperature, minTemperature, threshold)) { SpawnInterface.Output }
+            else { SpawnInterface.External }
+            POut(ClusterInformation(distanceFromLeader), status)
+          }
       }
     }
-    sspawn2(spawnLogic, start, input)
+    rep(Map.empty[ClusterStart, ClusterInformation]) { oldMap =>
+      val toKill = watchDog(oldMap)
+      sspawn2(spawnLogic, start, input.copy(clusterToKill = toKill))
+    } // process handling
+
   }
 
   // example of fluent disjoint cluster API
@@ -142,7 +153,28 @@ class BaseProgram
 }
 
 object BaseProgram {
-  case class ClusterStart(leaderId: ID, temperature: Double)
+  case class ClusterStart(leaderId: ID, temperature: Double, timestamp: Long) {
+
+    def canEqual(other: Any): Boolean = other.isInstanceOf[ClusterStart]
+
+    override def equals(other: Any): Boolean = other match {
+      case that: ClusterStart =>
+        (that.canEqual(this)) &&
+          leaderId == that.leaderId &&
+          temperature == that.temperature
+      case _ => false
+    }
+
+    override def hashCode(): Int = {
+      val state = Seq(leaderId, temperature)
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
+  }
   case class ClusterInformation(hopCountDistance: Int)
-  case class ClusterInput(temperaturePerceived: Double, threshold: Double, wasCandidate: Boolean = false)
+  case class ClusterInput(
+    temperaturePerceived: Double,
+    threshold: Double,
+    wasCandidate: Boolean = false,
+    clusterToKill: Set[ClusterStart] = Set.empty
+  )
 }

@@ -5,11 +5,11 @@ variables:
   simulation_length: &simulation_length { formula: 100.0 }
 seeds: { scenario: *seed, simulation: *seed }
 
-#terminate: { type: AfterTime, parameters: [*simulation_length] }
+terminate: { type: AfterTime, parameters: [*simulation_length] }
 
 network-model:
   type: ConnectWithinDistance
-  parameters: [0.75]
+  parameters: [1.25]
 
 _gradient: &program
   - time-distribution: 1
@@ -50,11 +50,15 @@ layers:
 deployments:
   type: Grid
   parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
-  programs: *program
+  programs:
+    - *program
+    - time-distribution: 10
+      type: Event
+      actions: { type: BrownianMove, parameters: [ 0.05 ] }
 
 export:
   - type: CSVExporter
-    parameters: ["standardPatterns", 1.0, "./data"]
+    parameters: ["standardPatternsMovement", 1.0, "./data"]
     data:
       - type: Time
       - type: ClusterCount

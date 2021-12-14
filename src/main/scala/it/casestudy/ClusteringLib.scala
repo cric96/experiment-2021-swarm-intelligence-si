@@ -32,6 +32,7 @@ trait ClusteringLib {
   }
 
   /**
+   * TODO! currently it is only a draft
    * Creates cluster (overlapped) identified by the ID of the candidate node
    * @param clusterCandidate a Boolean field that defines if a node is a cluster candidate (i.e. the center of the cluster) or nnot
    * @param clusterField the data necessary to build the cluster (i.e. a temperature field, the potential, ...)

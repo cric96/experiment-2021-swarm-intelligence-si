@@ -49,6 +49,7 @@ val heap: Long = maxHeap ?: if (System.getProperty("os.name").toLowerCase().cont
     // Guess 16GB RAM of which 2 used by the OS
     14 * 1024L
 }
+val standardEffectFile = "standard"
 val taskSizeFromProject: Int? by project
 val taskSize = taskSizeFromProject ?: 512
 val threadCount = maxOf(1, minOf(Runtime.getRuntime().availableProcessors(), heap.toInt() / taskSize))
@@ -81,7 +82,12 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
             if (System.getenv("CI") == "true") {
                 args("-hl", "-t", "2")
             } else {
-                args("-g", "effects/${it.nameWithoutExtension}.aes")
+                val simulationFile = File(rootProject.rootDir.path + "/effects/${it.nameWithoutExtension}.aes")
+                if(simulationFile.exists()) {
+                    args("-g", "effects/${it.nameWithoutExtension}.aes")
+                } else {
+                    args("-g", "effects/$standardEffectFile.aes")
+                }
             }
             javaLauncher.set(
                 javaToolchains.launcherFor {
