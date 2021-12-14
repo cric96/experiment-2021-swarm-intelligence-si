@@ -18,6 +18,7 @@ class BaseProgram
     with ClusteringLib {
   implicit val precision: Precision = Precision(0.000001)
   private val threshold = 1
+  private val sameClusterThr = 0.1
   private val waitingTime = 5
 
   override def main(): Any = {
@@ -27,23 +28,25 @@ class BaseProgram
       false
     }
     // Start new process when a new local minimum is found
-    val clusterStarter = mux(candidate) { Set(ClusterStart(mid(), temperature, timestamp())) } {
-      Set.empty[ClusterStart]
+    val clusterStarter = mux(candidate) { Set(ClusteringKey(mid(), temperature, timestamp())) } {
+      Set.empty[ClusteringKey]
     }
     val clusters =
-      temperatureCluster(clusterStarter, ClusterInput(temperature, threshold, candidate)) // process handling
+      temperatureCluster(clusterStarter, ClusteringProcessInput(temperature, threshold, candidate)) // process handling
 
+    val merged = mergeCluster(clusters)
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
-    val coldestCluster = clusters.minByOption(
+    val coldestCluster = merged.minByOption(
       _._1.temperature
     )
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
-    node.put("clusters", clusters.keys.map(_.leaderId))
+    node.put("clusters", merged.keySet.map(_.leaderId))
+    node.put("centroids", clusters.map(_._2.information.centroid))
     node.put("fullClustersInfo", clusters)
     coldestCluster match {
-      case Some((ClusterStart(leader, _, _), _)) => node.put("clusterId", leader)
+      case Some((ClusteringKey(leader, _, _), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")
       case _ =>
     }
@@ -78,12 +81,12 @@ class BaseProgram
    * @param processes the process perceived from a node
    * @return the set of processes that will be killed
    */
-  def watchDog(processes: Map[ClusterStart, ClusterInformation]): Set[ClusterStart] = {
-    val processesKey = processes.keys.groupBy(_.leaderId).values.flatten
-    val toKeepAlive = processesKey.maxByOption { case ClusterStart(_, _, timestamp) => timestamp }
+  def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput]): Set[ClusteringKey] = {
+    val processesKey = processes.keys.groupBy(_.leaderId).values.flatten.filter(_.leaderId == mid())
+    val toKeepAlive = processesKey.maxByOption { case ClusteringKey(_, _, timestamp) => timestamp }
     val toKill = toKeepAlive match {
-      case Some(ClusterStart(_, _, timestamp)) =>
-        processesKey.filter { case ClusterStart(_, _, otherProcess: Long) => otherProcess < timestamp }
+      case Some(ClusteringKey(_, _, timestamp)) =>
+        processesKey.filter { case ClusteringKey(_, _, otherProcess: Long) => otherProcess < timestamp }
       case _ => Set.empty
     }
     toKill.toSet
@@ -96,29 +99,67 @@ class BaseProgram
    * where d' is the current node where the process is evaluated and d is the cluster center.
    */
   def temperatureCluster(
-    start: Set[ClusterStart],
-    input: ClusterInput
-  ): Map[ClusterStart, ClusterInformation] = {
-    val spawnLogic: ClusterStart => ClusterInput => POut[ClusterInformation] = {
-      case cluster @ ClusterStart(leader, minTemperature, _) => {
-        case ClusterInput(temperature, threshold, wasCandidate, toKill) =>
+    start: Set[ClusteringKey],
+    input: ClusteringProcessInput
+  ): Map[ClusteringKey, ClusteringProcessOutput] = {
+    val spawnLogic: ClusteringKey => ClusteringProcessInput => POut[Option[ClusteringProcessOutput]] = {
+      case cluster @ ClusteringKey(leader, minTemperature, _) => {
+        case ClusteringProcessInput(temperature, threshold, wasCandidate, toKill) =>
           // this condition is used to change leader.
           // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
           mux(leader == mid() && (!wasCandidate || toKill.contains(cluster))) {
-            POut(ClusterInformation(-1), SpawnInterface.Terminated)
+            POut(Option.empty[ClusteringProcessOutput], SpawnInterface.Terminated)
           } {
             val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
             val status = if (inCluster(temperature, minTemperature, threshold)) { SpawnInterface.Output }
             else { SpawnInterface.External }
-            POut(ClusterInformation(distanceFromLeader), status)
+            val clusterInformation =
+              broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
+            POut(Some(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), status)
           }
       }
     }
-    rep(Map.empty[ClusterStart, ClusterInformation]) { oldMap =>
+    rep(Map.empty[ClusteringKey, ClusteringProcessOutput]) { oldMap =>
       val toKill = watchDog(oldMap)
-      sspawn2(spawnLogic, start, input.copy(clusterToKill = toKill))
+      sspawn2(spawnLogic, start, input.copy(clusterToKill = toKill)).collect { case (k, Some(v)) => k -> v }
     } // process handling
+  }
 
+  def evaluateClusterInformation(potential: Int, temperature: Double): ClusterInformation[Double] = {
+    val data = {
+      C[Int, Map[ID, ClusterData[Double]]](
+        potential,
+        _ ++ _,
+        Map(mid() -> ClusterData(currentPosition(), temperature)),
+        Map.empty
+      )
+    }
+    val minPoint = data.values.min
+    val maxPoint = data.values.max
+    val average = data.values.reduce(_ + _) / data.values.size
+    ClusterInformation(minPoint, maxPoint, average)
+  }
+
+  def mergeCluster(
+    clusterInfo: Map[ClusteringKey, ClusteringProcessOutput]
+  ): Map[ClusteringKey, ClusteringProcessOutput] = {
+    clusterInfo
+      .foldLeft(Map.empty[ClusteringKey, ClusteringProcessOutput]) { case (acc, (clusteringKey, data)) =>
+        val sameCluster = acc.filter { case (_, currentData) =>
+          currentData.information.centroid.distance(data.information.centroid) +- sameClusterThr
+        }
+        val toRemove = sameCluster.filter { case (currentClusterKey, _) =>
+          currentClusterKey.leaderId > clusteringKey.leaderId
+        }
+        if (toRemove.nonEmpty || toRemove.isEmpty && acc.isEmpty) { (acc -- toRemove.keys) + (clusteringKey -> data) }
+        else if (sameCluster.nonEmpty) { acc }
+        else { acc + (clusteringKey -> data) }
+      }
+  }
+
+  def inCluster(myTemperature: Double, leaderTemperature: Double, threshold: Double): Boolean = {
+    val difference = myTemperature - leaderTemperature
+    difference >= 0.0 && difference <= threshold
   }
 
   // example of fluent disjoint cluster API
@@ -145,20 +186,15 @@ class BaseProgram
       .start()
   }
 
-  def inCluster(myTemperature: Double, leaderTemperature: Double, threshold: Double): Boolean = {
-    val difference = myTemperature - leaderTemperature
-    difference >= 0.0 && difference <= threshold
-  }
-
 }
 
 object BaseProgram {
-  case class ClusterStart(leaderId: ID, temperature: Double, timestamp: Long) {
+  case class ClusteringKey(leaderId: ID, temperature: Double, timestamp: Long) {
 
-    def canEqual(other: Any): Boolean = other.isInstanceOf[ClusterStart]
+    def canEqual(other: Any): Boolean = other.isInstanceOf[ClusteringKey]
 
     override def equals(other: Any): Boolean = other match {
-      case that: ClusterStart =>
+      case that: ClusteringKey =>
         (that.canEqual(this)) &&
           leaderId == that.leaderId &&
           temperature == that.temperature
@@ -170,11 +206,11 @@ object BaseProgram {
       state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
     }
   }
-  case class ClusterInformation(hopCountDistance: Int)
-  case class ClusterInput(
+  case class ClusteringProcessOutput(hopCountDistance: Int, information: ClusterInformation[Double])
+  case class ClusteringProcessInput(
     temperaturePerceived: Double,
     threshold: Double,
     wasCandidate: Boolean = false,
-    clusterToKill: Set[ClusterStart] = Set.empty
+    clusterToKill: Set[ClusteringKey] = Set.empty
   )
 }
