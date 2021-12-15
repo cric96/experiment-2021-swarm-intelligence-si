@@ -54,7 +54,7 @@ The black line shows the cluster founded by the aggregate program
 
 In this experiment, there are five disjointed clusters that follows a gaussian distribution.
 
-![Experiment Image](./readme/img/gaussian.png)
+![Experiment Image](./readme/img/gaussian.gif)
 
 ![](readme/plots/standard-patterns.png)
 ```
@@ -70,7 +70,7 @@ In this experiment, there are five disjointed clusters that follows a gaussian d
 
 The agents move following a browian movement.
 Multiple process starts but, in general, the number of cluster is quite stable.
-![Experiment Image](./readme/img/standard-pattern-movement.gif)
+![Experiment Image](./readme/img/movement-field.gif)
 
 ![](readme/plots/movement.png)
 ```
@@ -86,7 +86,7 @@ Multiple process starts but, in general, the number of cluster is quite stable.
 In this experiment, there are four joined clusters that follow a gaussian distribution.
 Moreover, there is one disjointed cluster from the others.
 
-![Experiment Image](./readme/img/overlay.png)
+![Experiment Image](./readme/img/overlap-field.gif)
 
 ![](readme/plots/overlay-patterns.png)
 **NB! Here the merge strategy does not produce the correct clusters.**
@@ -102,7 +102,7 @@ Moreover, there is one disjointed cluster from the others.
 In this experiment, there are four disjointed clusters with a gaussian distribution but stretched.
 
 
-![Experiment Image](./readme/img/gaussian-stretched.png)
+![Experiment Image](./readme/img/stretched.gif)
 
 ![](readme/plots/strect.png)
 ```
@@ -118,7 +118,7 @@ In this experiment, there is one cluster with a uniform value (convex, a rectang
 Due to the fact the cluster is uniform, the candidate selection goes wrong, and the program finds more pattern (3).
 
 But, using a merge strategy, the program cluster eventually find the correct cluster number (but it needs more computation).
-![Experiment Image](./readme/img/uniforms.png)
+![Experiment Image](./readme/img/uniform-layers.gif)
 
 ![](readme/plots/uniform-layers.png)
 ```
@@ -134,7 +134,7 @@ This experiment is similar to [Uniform Layers Distribution](#uniform-layers-dist
 So, as the previous example, the program cannot find correct cluster distribution.
 
 The merge strategy helps, but the program find three cluster instead of two.
-![Experiment Image](./readme/img/non-convex.png)
+![Experiment Image](./readme/img/non-convex.gif)
 
 ![](readme/plots/non-convex.png)
 ```
@@ -159,7 +159,7 @@ The lighter the color the lower the temperature.
 In this experiment, there are more local minimum and so multiple clusters are found.
 
 The merge policy helps, but here is very slow (because it needs to share the cluster process information within the all system)
-![Experiment Image](readme/img/one-direction-cluster.gif)
+![Experiment Image](readme/img/one-direction-field.gif)
 
 ![](readme/plots/one-direction.png)
 ```
@@ -173,8 +173,9 @@ The merge policy helps, but here is very slow (because it needs to share the clu
 
 Similar to the previous example, but the temperature grows with dx = dy = 0.05:
 ![Experiment Image](./readme/img/temperature-local-minimum.gif)
+
 In this case, the algorithm works as excepted
-![Experiment Image](readme/img/one-direction-cluster-local-minimum.gif)
+![Experiment Image](readme/img/one-direction-local-minimum-field.gif)
 
 
 ![](readme/plots/one-direction-with-local-minimum.png)
