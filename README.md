@@ -186,8 +186,8 @@ In this case, the algorithm works as excepted
 
 ## Todo
 - [ ] Use a metric to evaluate the cluster created with Aggregate Computing (see related works for that)
-- [ ] Find a way to plot different clusters (currently you need to inspect each node)
-- [x] Try to generalise the cluster formation (i.e. candidate selection, in condition, out condition, live condition)
+- [x] Find a way to plot different clusters (currently you need to inspect each node)
+- [ ] Try to generalise the cluster formation (i.e. candidate selection, in condition, out condition, live condition)
 - [x] Try to create cluster using G and C (link to the previous work)
 
 ## Problems
