@@ -1,10 +1,10 @@
 package it.casestudy
-import it.casestudy.BaseProgram._
+import it.casestudy.Clustering._
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
 
-class BaseProgram
+class Clustering
     extends AggregateProgram
     with StandardSensors
     with ScafiAlchemistSupport
@@ -44,7 +44,7 @@ class BaseProgram
     node.put("candidate", candidate)
     node.put("clusters", merged.keySet.map(_.leaderId))
     node.put("centroids", clusters.map(_._2.information.centroid))
-    node.put("fullClustersInfo", clusters)
+    // node.put("fullClustersInfo", clusters)
     coldestCluster match {
       case Some((ClusteringKey(leader, _, _), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")
@@ -110,12 +110,15 @@ class BaseProgram
           mux(leader == mid() && (!wasCandidate || toKill.contains(cluster))) {
             POut(Option.empty[ClusteringProcessOutput], SpawnInterface.Terminated)
           } {
-            val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-            val status = if (inCluster(temperature, minTemperature, threshold)) { SpawnInterface.Output }
-            else { SpawnInterface.External }
-            val clusterInformation =
-              broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
-            POut(Some(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), status)
+            val isInCluster = inCluster(temperature, minTemperature, threshold)
+            branch(isInCluster) {
+              val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
+              val clusterInformation =
+                broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
+              POut(Option(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), SpawnInterface.Output)
+            } {
+              POut(Option.empty[ClusteringProcessOutput], SpawnInterface.External)
+            }
           }
       }
     }
@@ -125,6 +128,12 @@ class BaseProgram
     } // process handling
   }
 
+  /**
+   * extract cluster information from a given potential field
+   * @param potential the distance (hop count) from the central cluster
+   * @param temperature the local temperature
+   * @return (min point, max point, centroid) of the cluster
+   */
   def evaluateClusterInformation(potential: Int, temperature: Double): ClusterInformation[Double] = {
     val data = {
       C[Int, Map[ID, ClusterData[Double]]](
@@ -140,6 +149,10 @@ class BaseProgram
     ClusterInformation(minPoint, maxPoint, average)
   }
 
+  /** 
+   * Merge policy: define if two (or more) clusters are the same.
+   * In this case I used the distance from the centroid.
+   * */
   def mergeCluster(
     clusterInfo: Map[ClusteringKey, ClusteringProcessOutput]
   ): Map[ClusteringKey, ClusteringProcessOutput] = {
@@ -157,6 +170,13 @@ class BaseProgram
       }
   }
 
+  /**
+   * tell if a node is inside the cluster or outside.
+   * @param myTemperature the local temperature
+   * @param leaderTemperature the temperature of the leader that had start the cluster process
+   * @param threshold the threshould used to consider the node in/out-side the cluster
+   * @return True if the node is inside, False otherwise.
+   */
   def inCluster(myTemperature: Double, leaderTemperature: Double, threshold: Double): Boolean = {
     val difference = myTemperature - leaderTemperature
     difference >= 0.0 && difference <= threshold
@@ -188,7 +208,7 @@ class BaseProgram
 
 }
 
-object BaseProgram {
+object Clustering {
   case class ClusteringKey(leaderId: ID, temperature: Double, timestamp: Long) {
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[ClusteringKey]

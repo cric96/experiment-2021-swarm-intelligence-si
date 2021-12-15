@@ -16,7 +16,7 @@ _gradient: &program
     type: Event
     actions:
     - type: RunScafiProgram
-      parameters: [ it.casestudy.BaseProgram ]
+      parameters: [ it.casestudy.Clustering ]
   - program: send
 
 layers:
