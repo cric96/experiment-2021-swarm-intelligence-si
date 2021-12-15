@@ -1,5 +1,6 @@
 package it.casestudy
 import it.casestudy.Clustering._
+import it.unibo.alchemist.loader.variables.ArbitraryVariable
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
@@ -22,6 +23,7 @@ class Clustering
   private val waitingTime = 5
 
   override def main(): Any = {
+    ArbitraryVariable
     val temperature: Double = sense[java.lang.Double]("temperature")
     // "hysteresis" condition, waiting time before starting a process
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
