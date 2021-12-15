@@ -1,4 +1,3 @@
-import java.awt.GraphicsEnvironment
 import java.io.ByteArrayOutputStream
 
 plugins {
@@ -82,7 +81,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
                 args("-hl", "-t", "2")
             } else {
                 val simulationFile = File(rootProject.rootDir.path + "/effects/${it.nameWithoutExtension}.aes")
-                if(simulationFile.exists()) {
+                if (simulationFile.exists()) {
                     args("-g", "effects/${it.nameWithoutExtension}.aes")
                 } else {
                     args("-g", "effects/$standardEffectFile.aes")
