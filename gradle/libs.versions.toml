@@ -9,11 +9,13 @@ alchemist = { module = "it.unibo.alchemist:alchemist", version.ref = "alchemist"
 alchemist-scafi = { module = "it.unibo.alchemist:alchemist-incarnation-scafi", version.ref = "alchemist" }
 alchemist-interfaces = { module = "it.unibo.alchemist:alchemist-interfaces", version.ref = "alchemist" }
 alchemist-tooling = { module = "it.unibo.alchemist:alchemist-ui-tooling", version.ref = "alchemist" }
+alchemist-swing = { module = "it.unibo.alchemist:alchemist-swingui", version.ref = "alchemist"}
 scala-compiler = { module = "org.scala-lang:scala-library", version.ref = "scala"}
 breeze-math = { module = "org.scalanlp:breeze_2.13", version.ref = "breeze" }
 
 [bundles]
 alchemist-bundle = [ "alchemist", "alchemist-scafi", "scala-compiler", "alchemist-interfaces", "alchemist-tooling", "breeze-math" ]
+
 
 [plugins]
 gitSemVer = { id = "org.danilopianini.git-sensitive-semantic-versioning", version = "0.3.0" }
