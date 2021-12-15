@@ -27,16 +27,15 @@ In [Problems](#problems) I underline the limitations/current problem that we hav
   
 | Low temperature | High Temperature |
 |---|---|
-| ![](./readme/legenda/low-temperature.gif)  | ![](./readme/legenda/node-temperature.gif)  |
+| ![](./readme/legenda/low-temperature.png)  | ![](./readme/legenda/high-temperature.png)  |
   
 - candidate node: A node that starts the cluster expansion process (the green circle)
   
-![](./readme/legenda/candidate.gif)
+![](./readme/legenda/candidate.png)
   
-- cluster id: The cluster with the lowest temperature (a label, in the image
-  **0.0** is the cluster label).
+- clusters: each subdivision rapresent a different cluster found (here we have 4 cluster)
   
-![](./readme/legenda/cluster-value.gif)
+![](./readme/legenda/clusters.png)
 
   
 ### Plots
