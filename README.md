@@ -41,6 +41,7 @@ In [Problems](#problems) I underline the limitations/current problem that we hav
   
 ### Plots
 Taking this example:
+
 ![](readme/plots/movement.png)
 
 The dotted line expresses the real number of clusters.
