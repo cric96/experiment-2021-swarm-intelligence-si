@@ -1,6 +1,5 @@
 package it.casestudy
 import it.casestudy.Clustering._
-import it.unibo.alchemist.loader.variables.ArbitraryVariable
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
@@ -28,14 +27,24 @@ class Clustering
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
       false
     }
-    // Start new process when a new local minimum is found
-    val clusterStarter = mux(candidate) { Set(ClusteringKey(mid())(temperature, timestamp())) } {
-      Set.empty[ClusteringKey]
-    }
-    val clusters =
-      temperatureCluster(clusterStarter, ClusteringProcessInput(temperature, threshold, candidate)) // process handling
 
-    val merged = mergeCluster(clusters)
+    val merged = cluster
+      .input { ClusteringProcessInput(temperature, threshold, candidate) }
+      .keyGenerator { ClusteringKey(mid())(temperature, timestamp()) }
+      .process(key =>
+        input => {
+          val distanceFromLeader = classicGradient(mid() == key.leaderId, () => 1).toInt
+          val clusterInformation =
+            broadcast(mid() == key.leaderId, evaluateClusterInformation(distanceFromLeader, input.temperaturePerceived))
+          ClusteringProcessOutput(distanceFromLeader, clusterInformation)
+        }
+      )
+      .insideIf { key => input => _ => inCluster(input.temperaturePerceived, key.temperature, input.threshold) }
+      .candidate { candidate }
+      .mergeWhen(clusters => mergeCluster(clusters))
+      .killWhen(clusters => watchDog(clusters, candidate))
+      .overlap()
+    // val merged = mergeCluster(clusters)
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
     val coldestCluster = merged.minByOption(
       _._1.temperature
@@ -44,7 +53,7 @@ class Clustering
     node.put("temperaturePerceived", temperature)
     node.put("candidate", candidate)
     node.put("clusters", merged.keySet.map(_.leaderId))
-    node.put("centroids", clusters.map(_._2.information.centroid))
+    // node.put("centroids", clusters.map(_._2.information.centroid))
     // node.put("fullClustersInfo", clusters)
     coldestCluster match {
       case Some((ClusteringKey(leader), _)) => node.put("clusterId", leader)
@@ -57,6 +66,7 @@ class Clustering
   override def sense[A](name: String): A = {
     Try { vm.localSense[A](name) }.orElse { Try { senseEnvData[A](name) } }.get
   }
+
   def isCandidate(): Boolean = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val temperatureNeighbourField = includingSelf.reifyField(nbr { temperature })
@@ -84,41 +94,6 @@ class Clustering
    */
   def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput], candidate: Boolean): Set[ClusteringKey] = {
     processes.filter { case (ClusteringKey(id), _) => mid() == id && !candidate }.keySet
-  }
-
-  /*
-   * uses sspawn for handling leader changes ==> handle leader changes
-   * It creates temperature cluster following this condition:
-   *  0 <= d'.m() - d.m() <= w
-   * where d' is the current node where the process is evaluated and d is the cluster center.
-   */
-  def temperatureCluster(
-    start: Set[ClusteringKey],
-    input: ClusteringProcessInput
-  ): Map[ClusteringKey, ClusteringProcessOutput] = {
-    val spawnLogic: ClusteringKey => ClusteringProcessInput => POut[Option[ClusteringProcessOutput]] = {
-      case cluster @ ClusteringKey(leader) => { case ClusteringProcessInput(temperature, threshold, _, toKill) =>
-        // this condition is used to change leader.
-        // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
-        mux(toKill.contains(cluster)) {
-          POut(Option.empty[ClusteringProcessOutput], SpawnInterface.Terminated)
-        } {
-          val isInCluster = inCluster(temperature, cluster.temperature, threshold)
-          branch(isInCluster) {
-            val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-            val clusterInformation =
-              broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
-            POut(Option(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), SpawnInterface.Output)
-          } {
-            POut(Option.empty[ClusteringProcessOutput], SpawnInterface.External)
-          }
-        }
-      }
-    }
-    rep(Map.empty[ClusteringKey, ClusteringProcessOutput]) { oldMap =>
-      val toKill = watchDog(oldMap, input.wasCandidate)
-      sspawn2(spawnLogic, start, input.copy(clusterToKill = toKill)).collect { case (k, Some(v)) => k -> v }
-    } // process handling
   }
 
   /**
@@ -175,17 +150,35 @@ class Clustering
     difference >= 0.0 && difference <= threshold
   }
 
+  def disjointedClusters(
+    candidate: Boolean,
+    temperature: Double,
+    threshold: Double
+  ): Map[ClusteringKey, Int] = {
+    cluster
+      .input(ClusteringProcessInput(temperature, threshold, candidate))
+      .keyGenerator(ClusteringKey(mid())(temperature, timestamp()))
+      .process(k =>
+        _ => {
+          val distance = classicGradient(k.leaderId == mid())
+          distance.toInt
+        }
+      )
+      .insideIf(key => input => output => inCluster(input.temperaturePerceived, key.temperature, input.threshold))
+      .candidate(candidate)
+      .disjoint()
+  }
   // example of fluent disjoint cluster API
-  def disjointedClusters(candidate: Boolean, temperature: Double, threshold: Double): Option[ID] = {
+  /*def disjointedClusters(candidate: Boolean, temperature: Double, threshold: Double): Option[ID] = {
     cluster.disjoint
       .candidate(candidate)
       .broadcast(temperature)
       .join(leaderTemperature => inCluster(temperature, leaderTemperature, threshold))
       .start()
-  }
+  }*/
 
   // example of a complex disjoint cluster API
-  def clusterOnNodeNumber(candidate: Boolean, howMany: Int): Option[ID] = {
+  /*def clusterOnNodeNumber(candidate: Boolean, howMany: Int): Option[ID] = {
     cluster.disjoint
       .candidate(candidate)
       .broadcast(0)
@@ -197,7 +190,7 @@ class Clustering
         clusterId.map(_._2).contains(mid())
       })
       .start()
-  }
+  }*/
 
 }
 
