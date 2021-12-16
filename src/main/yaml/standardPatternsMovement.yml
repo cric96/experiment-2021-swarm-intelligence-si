@@ -4,14 +4,15 @@ variables:
   seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
   simulation_length: &simulation_length { formula: 100.0 }
   in_cluster_thr: &in_cluster_thr
-  type: ArbitraryVariable
-  parameters: [ 0.5, [ 0.75, 1, 1.1 ] ]
+    type: ArbitraryVariable
+    parameters: [ 1.0, [ 0.5, 0.75, 1.1 ] ]
   same_cluster_thr: &same_cluster_thr
     type: ArbitraryVariable
     parameters: [ 0.1, [ 0.05, 0.5, 1.5 ] ]
   candidate_in_hysteresis: &candidate_in_hysteresis
     type: ArbitraryVariable
     parameters: [ 3, [ 0, 5, 10 ] ]
+
 seeds: { scenario: *seed, simulation: *seed }
 
 terminate: { type: AfterTime, parameters: [*simulation_length] }
@@ -64,7 +65,13 @@ deployments:
     - time-distribution: 10
       type: Event
       actions: { type: BrownianMove, parameters: [ 0.05 ] }
-
+  contents:
+    - molecule: inClusterThr
+      concentration: *in_cluster_thr
+    - molecule: sameClusterThr
+      concentration: *same_cluster_thr
+    - molecule: waitingTime
+      concentration: *candidate_in_hysteresis
 
 export:
   - type: CSVExporter

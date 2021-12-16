@@ -3,6 +3,7 @@ import it.unibo.alchemist.boundary.gui.effects.DrawClusterEffect._
 import it.unibo.alchemist.boundary.wormhole.interfaces.Wormhole2D
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces.{Environment, Node, Position2D}
+import it.unibo.alchemist.scala.ScalaInterpreter
 
 import java.awt.{Color, Graphics2D, LinearGradientPaint, Paint, Point, Shape}
 import java.awt.geom.{AffineTransform, Rectangle2D}
@@ -52,6 +53,8 @@ class DrawClusterEffect extends Effect {
         val blackFraction = (0.1 * fractions) / colors.length
         val allColor = colors.flatMap(c => List(Color.BLACK, c))
         val bound = shape.getBounds2D
+        import scalacache.modes.sync._ // Synchronous mode
+        scalacache.caching("//VAL" + str)(None)(ScalaInterpreter[Any](str))
         val fractionsArray: Array[Float] = LazyList
           .iterate(List(0.0f, blackFraction)) { case black :: color :: Nil =>
             List(color + colorFraction, color + colorFraction + blackFraction)

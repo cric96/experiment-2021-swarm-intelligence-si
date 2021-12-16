@@ -30,6 +30,7 @@ multiJvm {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.bundles.alchemist.bundle)
+    implementation(libs.bundles.utils.bundle)
 }
 
 // Heap size estimation for batches
@@ -105,7 +106,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
             args(
                 "-e", "data/${it.nameWithoutExtension}",
                 "-b",
-                "-var", "seed",
+                "-var", "seed", "candidate_in_hysteresis",
                 "-p", threadCount,
                 "-i", 1
             )

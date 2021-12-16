@@ -4,8 +4,8 @@ variables:
   seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
   simulation_length: &simulation_length { formula: 100.0 }
   in_cluster_thr: &in_cluster_thr
-  type: ArbitraryVariable
-  parameters: [ 0.5, [ 0.75, 1, 1.1 ] ]
+    type: ArbitraryVariable
+    parameters: [ 1.0, [ 0.5, 0.75, 1.1 ] ]
   same_cluster_thr: &same_cluster_thr
     type: ArbitraryVariable
     parameters: [ 0.1, [ 0.05, 0.5, 1.5 ] ]
@@ -43,6 +43,14 @@ deployments:
   type: Grid
   parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
   programs: *program
+  contents:
+    - molecule: inClusterThr
+      concentration: *in_cluster_thr
+    - molecule: sameClusterThr
+      concentration: *same_cluster_thr
+    - molecule: waitingTime
+      concentration: *candidate_in_hysteresis
+
 
 
 export:

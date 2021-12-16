@@ -17,9 +17,9 @@ class Clustering
     with StateManagement
     with ClusteringLib {
   implicit val precision: Precision = Precision(0.000001)
-  private val threshold = 1
-  private val sameClusterThr = 0.1
-  private val waitingTime = 5
+  private lazy val threshold = node.get[Double]("inClusterThr")
+  private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
+  private lazy val waitingTime = 0 // node.get[Int]("waitingTime")
 
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
@@ -149,49 +149,6 @@ class Clustering
     val difference = myTemperature - leaderTemperature
     difference >= 0.0 && difference <= threshold
   }
-
-  def disjointedClusters(
-    candidate: Boolean,
-    temperature: Double,
-    threshold: Double
-  ): Map[ClusteringKey, Int] = {
-    cluster
-      .input(ClusteringProcessInput(temperature, threshold, candidate))
-      .keyGenerator(ClusteringKey(mid())(temperature, timestamp()))
-      .process(k =>
-        _ => {
-          val distance = classicGradient(k.leaderId == mid())
-          distance.toInt
-        }
-      )
-      .insideIf(key => input => output => inCluster(input.temperaturePerceived, key.temperature, input.threshold))
-      .candidate(candidate)
-      .disjoint()
-  }
-  // example of fluent disjoint cluster API
-  /*def disjointedClusters(candidate: Boolean, temperature: Double, threshold: Double): Option[ID] = {
-    cluster.disjoint
-      .candidate(candidate)
-      .broadcast(temperature)
-      .join(leaderTemperature => inCluster(temperature, leaderTemperature, threshold))
-      .start()
-  }*/
-
-  // example of a complex disjoint cluster API
-  /*def clusterOnNodeNumber(candidate: Boolean, howMany: Int): Option[ID] = {
-    cluster.disjoint
-      .candidate(candidate)
-      .broadcast(0)
-      .accumulate(_ + 1)
-      .join(potential => {
-        val ids = C[Int, Set[(Double, Int)]](potential, _ ++ _, Set((potential, mid())), Set.empty)
-        val acceptedIds = mux(candidate) { ids.toList.sortBy(_._1).take(howMany).toSet } { Set.empty }
-        val clusterId = broadcast(candidate, acceptedIds)
-        clusterId.map(_._2).contains(mid())
-      })
-      .start()
-  }*/
-
 }
 
 object Clustering {
