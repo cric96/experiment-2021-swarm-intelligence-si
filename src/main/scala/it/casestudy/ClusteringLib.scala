@@ -21,7 +21,10 @@ trait ClusteringLib {
       else { Option.empty[K] }
       val expand = G[Option[K]](candidate, clusterValue, a => a, metric)
       val cluster = expand.map(k => k -> process(k, input))
-      cluster.toMap
+      cluster match {
+        case Some((k, o)) if inCondition(k, input, o) => Map(k -> o)
+        case _ => Map.empty
+      }
     }
   }
 

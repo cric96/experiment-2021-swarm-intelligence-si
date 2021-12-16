@@ -71,7 +71,7 @@ class DrawClusterEffect extends Effect {
     }
   }
 
-  private def colorFromId(id: Int): Color = Color.getHSBColor(id / totalAgentNumber.toFloat, 0.5f, 0.5f)
+  private def colorFromId(id: Int): Color = Color.getHSBColor(id / totalAgentNumber.toFloat, 1f, 1f)
 
   private def getTransform(x: Int, y: Int, zoom: Double): AffineTransform = {
     val transform = new AffineTransform()
