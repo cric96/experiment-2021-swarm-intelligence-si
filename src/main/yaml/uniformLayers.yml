@@ -5,7 +5,7 @@ variables:
   simulation_length: &simulation_length { formula: 100.0 }
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
-    parameters: [ 1, [ 0.5, 0.75, 1.1 ] ]
+    parameters: [ 1.0, [ 0.5, 0.75, 1.1 ] ]
   same_cluster_thr: &same_cluster_thr
     type: ArbitraryVariable
     parameters: [ 0.1, [ 0.05, 0.5, 1.5 ] ]
