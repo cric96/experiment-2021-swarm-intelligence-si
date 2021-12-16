@@ -23,14 +23,13 @@ class Clustering
   private val waitingTime = 5
 
   override def main(): Any = {
-    ArbitraryVariable
     val temperature: Double = sense[java.lang.Double]("temperature")
     // "hysteresis" condition, waiting time before starting a process
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
       false
     }
     // Start new process when a new local minimum is found
-    val clusterStarter = mux(candidate) { Set(ClusteringKey(mid(), temperature, timestamp())) } {
+    val clusterStarter = mux(candidate) { Set(ClusteringKey(mid())(temperature, timestamp())) } {
       Set.empty[ClusteringKey]
     }
     val clusters =
@@ -48,7 +47,7 @@ class Clustering
     node.put("centroids", clusters.map(_._2.information.centroid))
     // node.put("fullClustersInfo", clusters)
     coldestCluster match {
-      case Some((ClusteringKey(leader, _, _), _)) => node.put("clusterId", leader)
+      case Some((ClusteringKey(leader), _)) => node.put("clusterId", leader)
       case None if node.has("clusterId") => node.remove("clusterId")
       case _ =>
     }
@@ -83,15 +82,8 @@ class Clustering
    * @param processes the process perceived from a node
    * @return the set of processes that will be killed
    */
-  def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput]): Set[ClusteringKey] = {
-    val processesKey = processes.keys.groupBy(_.leaderId).values.flatten.filter(_.leaderId == mid())
-    val toKeepAlive = processesKey.maxByOption { case ClusteringKey(_, _, timestamp) => timestamp }
-    val toKill = toKeepAlive match {
-      case Some(ClusteringKey(_, _, timestamp)) =>
-        processesKey.filter { case ClusteringKey(_, _, otherProcess: Long) => otherProcess < timestamp }
-      case _ => Set.empty
-    }
-    toKill.toSet
+  def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput], candidate: Boolean): Set[ClusteringKey] = {
+    processes.filter { case (ClusteringKey(id), _) => mid() == id && !candidate }.keySet
   }
 
   /*
@@ -105,27 +97,26 @@ class Clustering
     input: ClusteringProcessInput
   ): Map[ClusteringKey, ClusteringProcessOutput] = {
     val spawnLogic: ClusteringKey => ClusteringProcessInput => POut[Option[ClusteringProcessOutput]] = {
-      case cluster @ ClusteringKey(leader, minTemperature, _) => {
-        case ClusteringProcessInput(temperature, threshold, wasCandidate, toKill) =>
-          // this condition is used to change leader.
-          // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
-          mux(leader == mid() && (!wasCandidate || toKill.contains(cluster))) {
-            POut(Option.empty[ClusteringProcessOutput], SpawnInterface.Terminated)
+      case cluster @ ClusteringKey(leader) => { case ClusteringProcessInput(temperature, threshold, _, toKill) =>
+        // this condition is used to change leader.
+        // if it is leader (leader == mid()) and it is not a candidate anymore, it close the process.
+        mux(toKill.contains(cluster)) {
+          POut(Option.empty[ClusteringProcessOutput], SpawnInterface.Terminated)
+        } {
+          val isInCluster = inCluster(temperature, cluster.temperature, threshold)
+          branch(isInCluster) {
+            val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
+            val clusterInformation =
+              broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
+            POut(Option(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), SpawnInterface.Output)
           } {
-            val isInCluster = inCluster(temperature, minTemperature, threshold)
-            branch(isInCluster) {
-              val distanceFromLeader = classicGradient(mid() == leader, () => 1).toInt
-              val clusterInformation =
-                broadcast(mid() == leader, evaluateClusterInformation(distanceFromLeader, temperature))
-              POut(Option(ClusteringProcessOutput(distanceFromLeader, clusterInformation)), SpawnInterface.Output)
-            } {
-              POut(Option.empty[ClusteringProcessOutput], SpawnInterface.External)
-            }
+            POut(Option.empty[ClusteringProcessOutput], SpawnInterface.External)
           }
+        }
       }
     }
     rep(Map.empty[ClusteringKey, ClusteringProcessOutput]) { oldMap =>
-      val toKill = watchDog(oldMap)
+      val toKill = watchDog(oldMap, input.wasCandidate)
       sspawn2(spawnLogic, start, input.copy(clusterToKill = toKill)).collect { case (k, Some(v)) => k -> v }
     } // process handling
   }
@@ -211,23 +202,7 @@ class Clustering
 }
 
 object Clustering {
-  case class ClusteringKey(leaderId: ID, temperature: Double, timestamp: Long) {
-
-    def canEqual(other: Any): Boolean = other.isInstanceOf[ClusteringKey]
-
-    override def equals(other: Any): Boolean = other match {
-      case that: ClusteringKey =>
-        (that.canEqual(this)) &&
-          leaderId == that.leaderId &&
-          temperature == that.temperature
-      case _ => false
-    }
-
-    override def hashCode(): Int = {
-      val state = Seq(leaderId, temperature)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    }
-  }
+  case class ClusteringKey(leaderId: ID)(val temperature: Double, val timestamp: Long)
   case class ClusteringProcessOutput(hopCountDistance: Int, information: ClusterInformation[Double])
   case class ClusteringProcessInput(
     temperaturePerceived: Double,
