@@ -5,6 +5,13 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ClusteringLib {
   self: AggregateProgram with StandardSensors with BlockG with CustomSpawn =>
   // TODO Add documentation
+
+  /**
+   * 
+   * @tparam K clustering key (i.e. the identifier)
+   * @tparam I the input for the clustering process
+   * @tparam O the output produced for each cluster
+   */
   trait ClusteringProcess[K, I, O] extends (() => Map[K, O]) {
     def process(k: K, i: I): O
     def input: I
@@ -126,7 +133,7 @@ trait ClusteringLib {
     private val mergePolicy: Map[K, O] => Map[K, O]
   ) extends OverlapFinalizer[K, I, O](
         mergePolicy,
-        (clusters: Map[K, O]) => Set.empty,
+        (_: Map[K, O]) => Set.empty,
         context = context
       ) {
     def killWhen(killPolicy: Map[K, O] => Set[K]): OverlapFinalizer[K, I, O] =
