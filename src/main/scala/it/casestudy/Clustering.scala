@@ -19,7 +19,7 @@ class Clustering
   implicit val precision: Precision = Precision(0.000001)
   private lazy val threshold = node.get[Double]("inClusterThr")
   private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
-  private lazy val waitingTime = 0 // node.get[Int]("waitingTime")
+  private lazy val waitingTime = node.get[Int]("waitingTime")
 
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")

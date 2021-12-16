@@ -3,11 +3,12 @@ import it.unibo.alchemist.boundary.gui.effects.DrawClusterEffect._
 import it.unibo.alchemist.boundary.wormhole.interfaces.Wormhole2D
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces.{Environment, Node, Position2D}
-import it.unibo.alchemist.scala.ScalaInterpreter
+import scalacache._
+import scalacache.guava._
+import scalacache.modes.sync._
 
-import java.awt.{Color, Graphics2D, LinearGradientPaint, Paint, Point, Shape}
 import java.awt.geom.{AffineTransform, Rectangle2D}
-
+import java.awt.{Color, Graphics2D, LinearGradientPaint, Paint, Point, Shape}
 class DrawClusterEffect extends Effect {
   var totalAgentNumber = 0
   override def apply[T, P <: Position2D[P]](
@@ -47,20 +48,23 @@ class DrawClusterEffect extends Effect {
       case Nil => Color.black
       case color :: Nil => colorFromId(color)
       case clusters =>
-        val colors: Array[Color] = clusters.map(colorFromId).toArray
-        val fractions = 1.0f / (colors.length)
-        val colorFraction = 0.9 * fractions
-        val blackFraction = (0.1 * fractions) / colors.length
+        val colors: Array[Color] = colorCache.caching[Id](clusters)(None)(clusters.map(colorFromId).toArray)
         val allColor = colors.flatMap(c => List(Color.BLACK, c))
         val bound = shape.getBounds2D
-        val fractionsArray: Array[Float] = LazyList
-          .iterate(List(0.0f, blackFraction)) { case black :: color :: Nil =>
-            List(color + colorFraction, color + colorFraction + blackFraction)
-          }
-          .take(colors.length)
-          .flatten
-          .toArray
-          .map(_.toFloat)
+        val fractionsArray = fractionCache.caching[Id](clusters)(None) {
+          val fractions = 1.0f / (colors.length)
+          val colorFraction = 0.9 * fractions
+          val blackFraction = (0.1 * fractions) / colors.length
+          LazyList
+            .iterate(List(0.0f, blackFraction)) { case black :: color :: Nil =>
+              List(color + colorFraction, color + colorFraction + blackFraction)
+            }
+            .take(colors.length)
+            .flatten
+            .toArray
+            .map(_.toFloat)
+        }
+
         new LinearGradientPaint(
           bound.getMinX.toFloat,
           bound.getMinY.toFloat,
@@ -87,4 +91,7 @@ object DrawClusterEffect {
   val maxBound: Float = 1
   val clusterSize: Float = 8
   def areaSize = maxBound - minBound
+
+  val colorCache: Cache[Array[Color]] = GuavaCache[Array[Color]]
+  val fractionCache: Cache[Array[Float]] = GuavaCache[Array[Float]]
 }

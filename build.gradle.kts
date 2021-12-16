@@ -61,9 +61,15 @@ val runAllGraphic by tasks.register<DefaultTask>("runAllGraphic") {
     group = alchemistGroup
     description = "Launches all simulations with the graphic subsystem enabled"
 }
+
 val runAllBatch by tasks.register<DefaultTask>("runAllBatch") {
     group = alchemistGroup
     description = "Launches all experiments"
+}
+
+val runAllTest by tasks.register<DefaultTask>("runAllTest") {
+    group = alchemistGroup
+    description = "Launches all tests (in graphic subsystem)"
 }
 /*
  * Scan the folder with the simulation files, and create a task for each one of them.
@@ -97,7 +103,6 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
         }
         val capitalizedName = it.nameWithoutExtension.capitalize()
         val graphic by basetask("run${capitalizedName}Graphic")
-        runAllGraphic.dependsOn(graphic)
         val batch by basetask("run${capitalizedName}Batch") {
             description = "Launches batch experiments for $capitalizedName"
             jvmArgs("-XX:+AggressiveHeap")
@@ -111,7 +116,12 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
                 "-i", 1
             )
         }
-        runAllBatch.dependsOn(batch)
+        if(!capitalizedName.contains("Test")) {
+            runAllGraphic.dependsOn(graphic)
+            runAllBatch.dependsOn(batch)
+        } else {
+            runAllTest.dependsOn(graphic)
+        }
     }
 // add scalafmt dependencies
 tasks.withType<ScalaCompile>() {
