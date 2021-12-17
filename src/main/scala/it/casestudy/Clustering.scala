@@ -40,7 +40,9 @@ class Clustering
         }
       )
       .insideIf { key => input => _ => inCluster(input.temperaturePerceived, key.temperature, input.threshold) }
-      .candidate { candidate }
+      .candidateWithFeedback { cluster =>
+        (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
+      }
       .mergeWhen(clusters => mergeCluster(clusters))
       .killWhen(clusters => watchDog(clusters, candidate))
       .overlap()
@@ -147,6 +149,7 @@ class Clustering
    */
   def inCluster(myTemperature: Double, leaderTemperature: Double, threshold: Double): Boolean = {
     val difference = myTemperature - leaderTemperature
+    // Math.abs(difference) <= threshold
     difference >= 0.0 && difference <= threshold
   }
 }

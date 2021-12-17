@@ -3,7 +3,7 @@ package it.casestudy
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ClusteringLib {
-  self: AggregateProgram with StandardSensors with BlockG with CustomSpawn =>
+  self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with ScafiAlchemistSupport =>
   type Cluster[K, O] = Map[K, O]
   def emptyCluster[K, O] = Map.empty[K, O]
   def createCluster[K, O](clusterKey: K, clusterData: O): Cluster[K, O] = Map(clusterKey -> clusterData)
@@ -46,9 +46,11 @@ trait ClusteringLib {
     def merge(map: Cluster[K, O]): Cluster[K, O]
     final override def apply(): Cluster[K, O] = {
       rep(emptyCluster[K, O]) { clusters =>
+        node.put("clustersKeys", clusters.keySet)
         val toKill = watchDog(clusters, input)
         val clusterKey = mux(candidate(clusters)) { Set(keyFactory) } { Set.empty }
         val processes = sspawn2[K, (I, Set[K]), Option[O]](spawnLogic, clusterKey, (input, toKill))
+        node.put("nonMerged", processes.keySet)
         val withResult = processes.collect { case (k, Some(v)) => k -> v }
         merge(withResult)
       }
@@ -59,7 +61,10 @@ trait ClusteringLib {
           POut(Option.empty[O], SpawnInterface.Terminated)
         } {
           val output = process(clusterKey, input)
-          branch(inCondition(clusterKey, input, output)) {
+          if (mid() == 280) {
+            println(input, clusterKey, inCondition(clusterKey, input, output))
+          }
+          mux(inCondition(clusterKey, input, output)) {
             POut(Option(process(clusterKey, input)), SpawnInterface.Output)
           } {
             POut(Option.empty[O], SpawnInterface.External)
