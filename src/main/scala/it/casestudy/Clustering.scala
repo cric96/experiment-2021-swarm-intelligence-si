@@ -40,9 +40,10 @@ class Clustering
         }
       )
       .insideIf { key => input => _ => inCluster(input.temperaturePerceived, key.temperature, input.threshold) }
-      .candidateWithFeedback { cluster =>
+      .candidate { candidate }
+      /*.candidateWithFeedback { cluster =>
         (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
-      }
+      }*/
       .mergeWhen(clusters => mergeCluster(clusters))
       .killWhen(clusters => watchDog(clusters, candidate))
       .overlap()

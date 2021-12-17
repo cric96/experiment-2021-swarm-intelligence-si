@@ -61,9 +61,6 @@ trait ClusteringLib {
           POut(Option.empty[O], SpawnInterface.Terminated)
         } {
           val output = process(clusterKey, input)
-          if (mid() == 280) {
-            println(input, clusterKey, inCondition(clusterKey, input, output))
-          }
           mux(inCondition(clusterKey, input, output)) {
             POut(Option(process(clusterKey, input)), SpawnInterface.Output)
           } {
