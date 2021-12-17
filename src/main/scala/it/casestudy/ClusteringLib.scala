@@ -4,7 +4,9 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ClusteringLib {
   self: AggregateProgram with StandardSensors with BlockG with CustomSpawn =>
-  // TODO Add documentation
+  type Cluster[K, O] = Map[K, O]
+  def emptyCluster[K, O] = Map.empty[K, O]
+  def createCluster[K, O](clusterKey: K, clusterData: O): Cluster[K, O] = Map(clusterKey -> clusterData)
 
   /**
    * 
@@ -12,50 +14,53 @@ trait ClusteringLib {
    * @tparam I the input for the clustering process
    * @tparam O the output produced for each cluster
    */
-  trait ClusteringProcess[K, I, O] extends (() => Map[K, O]) {
+  trait ClusteringProcess[K, I, O] extends (() => Cluster[K, O]) {
     def process(k: K, i: I): O
     def input: I
     def inCondition(k: K, i: I, o: O): Boolean
     def keyFactory: K
-    def candidate: Boolean
+    def candidate(cluster: Cluster[K, O]): Boolean
   }
 
   trait Disjoint[K, I, O] {
     self: ClusteringProcess[K, I, O] =>
     def metric: Metric
-    final override def apply(): Map[K, O] = {
-      val clusterValue = if (candidate) { Option(keyFactory) }
-      else { Option.empty[K] }
-      val expand = G[Option[K]](candidate, clusterValue, a => a, metric)
-      val cluster = expand.map(k => k -> process(k, input))
-      cluster match {
-        case Some((k, o)) if inCondition(k, input, o) => Map(k -> o)
-        case _ => Map.empty
+    final override def apply(): Cluster[K, O] = {
+      rep(emptyCluster[K, O]) { oldCluster =>
+        val clusterValue = if (candidate(oldCluster)) { Option(keyFactory) }
+        else { Option.empty[K] }
+        val expand = G[Option[K]](candidate(oldCluster), clusterValue, a => a, metric)
+        val cluster = expand.map(clusterKey => clusterKey -> process(clusterKey, input))
+        cluster match {
+          case Some((clusterKey, clusterOutput)) if inCondition(clusterKey, input, clusterOutput) =>
+            createCluster(clusterKey, clusterOutput)
+          case _ => emptyCluster
+        }
       }
     }
   }
 
   trait Overlap[K, I, O] {
     self: ClusteringProcess[K, I, O] =>
-    def watchDog(cluster: Map[K, O], input: I): Set[K]
-    def merge(map: Map[K, O]): Map[K, O]
-    final override def apply(): Map[K, O] = {
-      rep(Map.empty[K, O]) { clusters =>
+    def watchDog(cluster: Cluster[K, O], input: I): Set[K]
+    def merge(map: Cluster[K, O]): Cluster[K, O]
+    final override def apply(): Cluster[K, O] = {
+      rep(emptyCluster[K, O]) { clusters =>
         val toKill = watchDog(clusters, input)
-        val key = mux(candidate) { Set(keyFactory) } { Set.empty }
-        val processes = sspawn2[K, (I, Set[K]), Option[O]](spawnLogic, key, (input, toKill))
+        val clusterKey = mux(candidate(clusters)) { Set(keyFactory) } { Set.empty }
+        val processes = sspawn2[K, (I, Set[K]), Option[O]](spawnLogic, clusterKey, (input, toKill))
         val withResult = processes.collect { case (k, Some(v)) => k -> v }
         merge(withResult)
       }
     }
-    private val spawnLogic: K => ((I, Set[K])) => POut[Option[O]] = { k =>
+    private val spawnLogic: K => ((I, Set[K])) => POut[Option[O]] = { clusterKey =>
       { case (input, toKill) =>
-        mux(toKill.contains(k)) {
+        mux(toKill.contains(clusterKey)) {
           POut(Option.empty[O], SpawnInterface.Terminated)
         } {
-          val output = process(k, input)
-          branch(inCondition(k, input, output)) {
-            POut(Option(process(k, input)), SpawnInterface.Output)
+          val output = process(clusterKey, input)
+          branch(inCondition(clusterKey, input, output)) {
+            POut(Option(process(clusterKey, input)), SpawnInterface.Output)
           } {
             POut(Option.empty[O], SpawnInterface.External)
           }
@@ -76,14 +81,14 @@ trait ClusteringLib {
 
     override def keyFactory: K = context.keyFactory()
 
-    override def candidate: Boolean = context.candidate()
+    override def candidate(cluster: Cluster[K, O]): Boolean = context.candidate(cluster)
   }
 
   case class CommonClusterContext[K, I, O](
     input: () => I = null,
     keyFactory: () => K = null,
     inCondition: K => I => O => Boolean = null,
-    candidate: () => Boolean = null,
+    candidate: (Cluster[K, O]) => Boolean = null,
     process: K => I => O = null
   ) {}
 
@@ -110,44 +115,45 @@ trait ClusteringLib {
   }
 
   case class CandidateSelection[K, I, O](private val context: CommonClusterContext[K, I, O]) {
-    def candidate(logic: => Boolean): FinalizerCommon[K, I, O] = FinalizerCommon(
-      context.copy(candidate = () => logic)
+    def candidate(logic: => Boolean): FinalizerCommon[K, I, O] = candidateWithFeedback(_ => logic)
+    def candidateWithFeedback(logic: Cluster[K, O] => Boolean): FinalizerCommon[K, I, O] = FinalizerCommon(
+      context.copy(candidate = logic)
     )
   }
 
   case class FinalizerCommon[K, I, O](private val context: CommonClusterContext[K, I, O])
       extends OverlapFinalizer[K, I, O](
-        (clusters: Map[K, O]) => clusters,
-        (_: Map[K, O]) => Set.empty,
+        (clusters: Cluster[K, O]) => clusters,
+        (_: Cluster[K, O]) => Set.empty,
         context = context
       ) {
-    def disjoint: () => Map[K, O] = new ClusterProcessFromContext(context) with Disjoint[K, I, O] {
+    def disjoint: () => Cluster[K, O] = new ClusterProcessFromContext(context) with Disjoint[K, I, O] {
       override def metric: ScafiIncarnationForAlchemist.Metric = nbrRange
     }
-    def mergeWhen(mergePolicy: Map[K, O] => Map[K, O]): MergeSelected[K, I, O] =
+    def mergeWhen(mergePolicy: Cluster[K, O] => Cluster[K, O]): MergeSelected[K, I, O] =
       MergeSelected(context, mergePolicy)
   }
 
   case class MergeSelected[K, I, O](
     private val context: CommonClusterContext[K, I, O],
-    private val mergePolicy: Map[K, O] => Map[K, O]
+    private val mergePolicy: Cluster[K, O] => Cluster[K, O]
   ) extends OverlapFinalizer[K, I, O](
         mergePolicy,
-        (_: Map[K, O]) => Set.empty,
+        (_: Cluster[K, O]) => Set.empty,
         context = context
       ) {
-    def killWhen(killPolicy: Map[K, O] => Set[K]): OverlapFinalizer[K, I, O] =
+    def killWhen(killPolicy: Cluster[K, O] => Set[K]): OverlapFinalizer[K, I, O] =
       new OverlapFinalizer(mergePolicy, killPolicy, context)
   }
 
   class OverlapFinalizer[K, I, O](
-    private val mergePolicy: Map[K, O] => Map[K, O],
-    private val killPolicy: Map[K, O] => Set[K],
+    private val mergePolicy: Cluster[K, O] => Cluster[K, O],
+    private val killPolicy: Cluster[K, O] => Set[K],
     private val context: CommonClusterContext[K, I, O]
   ) {
-    def overlap: () => Map[K, O] = new ClusterProcessFromContext(context) with Overlap[K, I, O] {
-      override def watchDog(cluster: Map[K, O], input: I): Set[K] = killPolicy(cluster)
-      override def merge(map: Map[K, O]): Map[K, O] = mergePolicy(map)
+    def overlap: () => Cluster[K, O] = new ClusterProcessFromContext(context) with Overlap[K, I, O] {
+      override def watchDog(cluster: Cluster[K, O], input: I): Set[K] = killPolicy(cluster)
+      override def merge(map: Cluster[K, O]): Cluster[K, O] = mergePolicy(map)
     }
   }
 }
