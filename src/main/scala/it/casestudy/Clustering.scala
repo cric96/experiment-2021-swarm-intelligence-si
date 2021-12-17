@@ -33,13 +33,18 @@ class Clustering
       .keyGenerator { ClusteringKey(mid())(temperature, timestamp()) }
       .process(key =>
         input => {
-          val distanceFromLeader = classicGradient(mid() == key.leaderId, () => 1).toInt
+          val isLeader = mid() == key.leaderId
+          val distanceFromLeader = classicGradient(isLeader, () => 1).toInt
+          val centralTemperature = mux(isLeader) { input.temperaturePerceived } { Double.NegativeInfinity }
+          val broadcastLeaderTemperature = broadcast(isLeader, centralTemperature)
           val clusterInformation =
-            broadcast(mid() == key.leaderId, evaluateClusterInformation(distanceFromLeader, input.temperaturePerceived))
-          ClusteringProcessOutput(distanceFromLeader, clusterInformation)
+            broadcast(mid() == key.leaderId, evaluateClusterInformation(distanceFromLeader, broadcastLeaderTemperature))
+          ClusteringProcessOutput(distanceFromLeader, broadcastLeaderTemperature, clusterInformation)
         }
       )
-      .insideIf { key => input => _ => inCluster(input.temperaturePerceived, key.temperature, input.threshold) }
+      .insideIf { _ => input => output =>
+        inCluster(input.temperaturePerceived, output.leaderTemperature, input.threshold)
+      }
       .candidateCondition { candidate }
       /*.candidateWithFeedback { cluster =>
         (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
@@ -50,7 +55,7 @@ class Clustering
     // val merged = mergeCluster(clusters)
     // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
     val coldestCluster = merged.minByOption(
-      _._1.temperature
+      _._1.startingTemperature
     )
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put("temperaturePerceived", temperature)
@@ -156,8 +161,12 @@ class Clustering
 }
 
 object Clustering {
-  case class ClusteringKey(leaderId: ID)(val temperature: Double, val timestamp: Long)
-  case class ClusteringProcessOutput(hopCountDistance: Int, information: ClusterInformation[Double])
+  case class ClusteringKey(leaderId: ID)(val startingTemperature: Double, val timestamp: Long)
+  case class ClusteringProcessOutput(
+    hopCountDistance: Int,
+    leaderTemperature: Double,
+    information: ClusterInformation[Double]
+  )
   case class ClusteringProcessInput(
     temperaturePerceived: Double,
     threshold: Double,

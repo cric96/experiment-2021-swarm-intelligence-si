@@ -61,8 +61,8 @@ trait ClusteringLib {
           POut(Option.empty[O], SpawnInterface.Terminated)
         } {
           val output = process(clusterKey, input)
-          mux(inCondition(clusterKey, input, output)) {
-            POut(Option(process(clusterKey, input)), SpawnInterface.Output)
+          branch(inCondition(clusterKey, input, output)) {
+            POut(Option(output), SpawnInterface.Output)
           } {
             POut(Option.empty[O], SpawnInterface.External)
           }

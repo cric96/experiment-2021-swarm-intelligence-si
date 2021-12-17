@@ -111,7 +111,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
             args(
                 "-e", "data/${it.nameWithoutExtension}",
                 "-b",
-                "-var", "seed", "candidate_in_hysteresis",
+                "-var", "seed",
                 "-p", threadCount,
                 "-i", 1
             )

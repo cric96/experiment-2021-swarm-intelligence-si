@@ -19,6 +19,7 @@ trait Libs
     with ClusteringLib {}
 
 class TemperatureDisjointedBased extends Libs {
+  def temperatureToBroadcast(id: ID, temperature: Double): Double = mux(id == mid()) { temperature } { -1 }
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val thr = 0.5
@@ -27,7 +28,7 @@ class TemperatureDisjointedBased extends Libs {
     val clusters = cluster
       .input(temperature)
       .keyGenerator(mid())
-      .process(id => _ => broadcast(mid() == id, temperature))
+      .process(id => input => broadcast(mid() == id, temperatureToBroadcast(id, input)))
       .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
       .candidateCondition { candidate }
       .disjoint()
@@ -37,6 +38,7 @@ class TemperatureDisjointedBased extends Libs {
 }
 
 class TemperatureOverlapBased extends Libs {
+  def temperatureToBroadcast(id: ID, temperature: Double): Double = mux(id == mid()) { temperature } { -1 }
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val thr = 0.5
@@ -44,13 +46,13 @@ class TemperatureOverlapBased extends Libs {
     val candidate = branch(id == mid()) { T(5) <= 0 } { false }
     val clusters = cluster
       .input(temperature)
-      .keyGenerator((mid(), temperature))
-      .process(key => _ => key._2)
+      .keyGenerator(mid())
+      .process(id => input => broadcast(mid() == id, temperatureToBroadcast(id, input)))
       .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
       .candidateCondition { candidate }
-      .overlap()
+      .disjoint()
     node.put("candidate", candidate)
-    node.put("clusters", clusters.keySet.map(_._1))
+    node.put("clusters", clusters.keySet)
   }
 }
 
@@ -63,7 +65,7 @@ class TemperatureOverlapBasedProblem extends Libs {
     val clusters = cluster
       .input(temperature)
       .keyGenerator(mid())
-      .process(key => input => { broadcast(mid() == key, input) })
+      .process(key => input => { broadcast(mid() == key, mux(mid() == key) { temperature } { -1 }) })
       .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
       .candidateCondition { candidate }
       .overlap()
