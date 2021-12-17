@@ -19,7 +19,7 @@ trait ClusteringLib {
     def input: I
     def inCondition(k: K, i: I, o: O): Boolean
     def keyFactory: K
-    def candidate(cluster: Cluster[K, O]): Boolean
+    def isCandidate(cluster: Cluster[K, O]): Boolean
   }
 
   trait Disjoint[K, I, O] {
@@ -27,9 +27,9 @@ trait ClusteringLib {
     def metric: Metric
     final override def apply(): Cluster[K, O] = {
       rep(emptyCluster[K, O]) { oldCluster =>
-        val clusterValue = if (candidate(oldCluster)) { Option(keyFactory) }
+        val clusterValue = if (isCandidate(oldCluster)) { Option(keyFactory) }
         else { Option.empty[K] }
-        val expand = G[Option[K]](candidate(oldCluster), clusterValue, a => a, metric)
+        val expand = G[Option[K]](isCandidate(oldCluster), clusterValue, a => a, metric)
         val cluster = expand.map(clusterKey => clusterKey -> process(clusterKey, input))
         cluster match {
           case Some((clusterKey, clusterOutput)) if inCondition(clusterKey, input, clusterOutput) =>
@@ -48,7 +48,7 @@ trait ClusteringLib {
       rep(emptyCluster[K, O]) { clusters =>
         node.put("clustersKeys", clusters.keySet)
         val toKill = watchDog(clusters, input)
-        val clusterKey = mux(candidate(clusters)) { Set(keyFactory) } { Set.empty }
+        val clusterKey = mux(isCandidate(clusters)) { Set(keyFactory) } { Set.empty }
         val processes = sspawn2[K, (I, Set[K]), Option[O]](spawnLogic, clusterKey, (input, toKill))
         node.put("nonMerged", processes.keySet)
         val withResult = processes.collect { case (k, Some(v)) => k -> v }
@@ -83,14 +83,14 @@ trait ClusteringLib {
 
     override def keyFactory: K = context.keyFactory()
 
-    override def candidate(cluster: Cluster[K, O]): Boolean = context.candidate(cluster)
+    override def isCandidate(cluster: Cluster[K, O]): Boolean = context.candidateCondition(cluster)
   }
 
   case class CommonClusterContext[K, I, O](
     input: () => I = null,
     keyFactory: () => K = null,
     inCondition: K => I => O => Boolean = null,
-    candidate: (Cluster[K, O]) => Boolean = null,
+    candidateCondition: (Cluster[K, O]) => Boolean = null,
     process: K => I => O = null
   ) {}
 
@@ -119,7 +119,7 @@ trait ClusteringLib {
   case class CandidateSelection[K, I, O](private val context: CommonClusterContext[K, I, O]) {
     def candidateCondition(logic: => Boolean): FinalizerCommon[K, I, O] = candidateWithFeedback(_ => logic)
     def candidateWithFeedback(logic: Cluster[K, O] => Boolean): FinalizerCommon[K, I, O] = FinalizerCommon(
-      context.copy(candidate = logic)
+      context.copy(candidateCondition = logic)
     )
   }
 
