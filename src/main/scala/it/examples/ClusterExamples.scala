@@ -54,6 +54,24 @@ class TemperatureOverlapBased extends Libs {
   }
 }
 
+class TemperatureOverlapBasedProblem extends Libs {
+  override def main(): Any = {
+    val temperature: Double = sense[java.lang.Double]("temperature")
+    val thr = 0.5
+    val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
+    val candidate = branch(id == mid()) { T(5) <= 0 } { false }
+    val clusters = cluster
+      .input(temperature)
+      .keyGenerator(mid())
+      .process(key => input => { broadcast(mid() == key, input) })
+      .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
+      .candidateCondition { candidate }
+      .overlap()
+    node.put("candidate", candidate)
+    node.put("clusters", clusters.keySet)
+  }
+}
+
 class ClusterBasedOnNumber extends Libs {
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")

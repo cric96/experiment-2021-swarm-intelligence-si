@@ -16,7 +16,7 @@ _gradient: &program
     type: Event
     actions:
     - type: RunScafiProgram
-      parameters: [ it.examples.TemperatureDisjointedBased ]
+      parameters: [ it.examples.TemperatureOverlapBasedProblem ]
   - program: send
 
 layers:
