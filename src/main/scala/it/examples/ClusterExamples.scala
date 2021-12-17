@@ -29,7 +29,7 @@ class TemperatureDisjointedBased extends Libs {
       .keyGenerator(mid())
       .process(id => _ => broadcast(mid() == id, temperature))
       .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
-      .candidate { candidate }
+      .candidateCondition { candidate }
       .disjoint()
     node.put("candidate", candidate)
     node.put("clusters", clusters.keySet)
@@ -47,7 +47,7 @@ class TemperatureOverlapBased extends Libs {
       .keyGenerator((mid(), temperature))
       .process(key => _ => key._2)
       .insideIf(_ => myTemp => leaderTemp => Math.abs(myTemp - leaderTemp) <= thr)
-      .candidate { candidate }
+      .candidateCondition { candidate }
       .overlap()
     node.put("candidate", candidate)
     node.put("clusters", clusters.keySet.map(_._1))
@@ -70,7 +70,7 @@ class ClusterBasedOnNumber extends Libs {
         broadcast(id == mid(), accepted)
       }
       .insideIf(_ => _ => ids => ids.contains(mid()))
-      .candidate(candidate)
+      .candidateCondition(candidate)
       .disjoint()
 
     node.put("candidate", candidate)

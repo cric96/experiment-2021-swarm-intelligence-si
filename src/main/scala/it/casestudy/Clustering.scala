@@ -40,7 +40,7 @@ class Clustering
         }
       )
       .insideIf { key => input => _ => inCluster(input.temperaturePerceived, key.temperature, input.threshold) }
-      .candidate { candidate }
+      .candidateCondition { candidate }
       /*.candidateWithFeedback { cluster =>
         (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
       }*/

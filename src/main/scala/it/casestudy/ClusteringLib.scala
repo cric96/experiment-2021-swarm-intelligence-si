@@ -117,7 +117,7 @@ trait ClusteringLib {
   }
 
   case class CandidateSelection[K, I, O](private val context: CommonClusterContext[K, I, O]) {
-    def candidate(logic: => Boolean): FinalizerCommon[K, I, O] = candidateWithFeedback(_ => logic)
+    def candidateCondition(logic: => Boolean): FinalizerCommon[K, I, O] = candidateWithFeedback(_ => logic)
     def candidateWithFeedback(logic: Cluster[K, O] => Boolean): FinalizerCommon[K, I, O] = FinalizerCommon(
       context.copy(candidate = logic)
     )
