@@ -22,7 +22,7 @@ class TemperatureDisjointedBased extends Libs {
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val thr = 0.5
-    val (id, _) = includingSelf.reifyField(nbr(temperature)).minBy(_._2)
+    val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
     val candidate = id == mid()
     val clusters = cluster
       .input(temperature)
@@ -40,7 +40,7 @@ class TemperatureOverlapBased extends Libs {
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val thr = 0.5
-    val (id, _) = includingSelf.reifyField(nbr(temperature)).minBy(_._2)
+    val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
     val candidate = branch(id == mid()) { T(5) <= 0 } { false }
     val clusters = cluster
       .input(temperature)
@@ -57,7 +57,7 @@ class TemperatureOverlapBased extends Libs {
 class ClusterBasedOnNumber extends Libs {
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
-    val (id, _) = includingSelf.reifyField(nbr(temperature)).minBy(_._2)
+    val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
     val candidate = id == mid()
     val howMany = 10
     val clusters = cluster
@@ -76,4 +76,8 @@ class ClusterBasedOnNumber extends Libs {
     node.put("candidate", candidate)
     node.put("clusters", clusters.keySet)
   }
+}
+
+class ClusterAdaptWithRange extends Libs {
+  override def main(): Any = {}
 }
