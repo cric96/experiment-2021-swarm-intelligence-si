@@ -1,5 +1,6 @@
 package it.unibo.alchemist.loader.`export`.extractors
 
+import it.casestudy.Clustering.ClusteringKey
 import it.unibo.alchemist.loader.`export`.Extractor
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces
@@ -9,7 +10,7 @@ import java.util
 import scala.jdk.CollectionConverters.{IteratorHasAsScala, MapHasAsJava}
 
 class ClusterCount() extends Extractor[Int] {
-  override def getColumnNames: util.List[String] = util.Arrays.asList("clusters")
+  override def getColumnNames: util.List[String] = util.Arrays.asList("clusters", "all-clusters")
 
   override def extractData[T](
     environment: Environment[T, _],
@@ -17,14 +18,22 @@ class ClusterCount() extends Extractor[Int] {
     time: interfaces.Time,
     l: Long
   ): util.Map[String, Int] = {
-    val clusters = environment.getNodes
+    val clusters = extract[Set[Int]](environment, "clusters")
+      .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
+
+    val overlapped = extract[Set[ClusteringKey]](environment, "allClusters")
+      .map(elem => elem.map(_.leaderId))
+      .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
+    Map("cluster" -> clusters.size, "all-clusters" -> overlapped.size).asJava
+  }
+
+  private def extract[T](environment: Environment[_, _], name: String): Iterator[T] = {
+    environment.getNodes
       .stream()
       .iterator()
       .asScala
-      .map(node => new SimpleNodeManager[T](node))
-      .filter(_.has("clusters"))
-      .map(node => node.get[Set[Int]]("clusters"))
-      .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
-    Map("cluster" -> clusters.size).asJava
+      .map(node => new SimpleNodeManager(node))
+      .filter(_.has(name))
+      .map(node => node.get[T](name))
   }
 }

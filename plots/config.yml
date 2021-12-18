@@ -1,14 +1,15 @@
 the_plots_labels:
   - Time                 #0
   - 'clusters'
+  - 'all clusters'
 the_plots_formats:
-  - [0,1]
+  - [0,2,1]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
 line_widths:
-  - [2,2,2,2,2,2,2,2,2,2,2]
-default_colors: &default_colors ["black", "black", "orange","red","green",
+  - [2,2,5,2,2,2,2,2,2,2,2]
+default_colors: &default_colors ["black", "cyan", "blue","red","green",
                                  "black", "blue","red",
                                  "magenta", "brown", "orange", "green", "brown"]
 the_plots_colors:
@@ -38,5 +39,5 @@ hlines:
 title_prefix: ''
 excluded_titles:
 line_styles:
-  - ['solid', 'solid']
+  - ['solid', 'solid', 'solid']
 format: "png"

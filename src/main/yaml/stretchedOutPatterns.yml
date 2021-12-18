@@ -35,11 +35,11 @@ layers:
     molecule: base-temperature
 
   - type: BidimensionalGaussianLayer
-    parameters: [ 0, 3, -4, -2.0, 1.0, 2.0 ]
+    parameters: [ 0, 3, -4, -2.0, 0.75, 2.0 ]
     molecule: temperature-1
 
   - type: BidimensionalGaussianLayer
-    parameters: [ 0, -0.5, -0.75, -2.0, 1.5, 1.0 ]
+    parameters: [ 0, -1.5, -0.75, -2.0, 1.5, 1.0 ]
     molecule: temperature-2
 
   - type: BidimensionalGaussianLayer

@@ -1,5 +1,6 @@
 package it.casestudy
 import it.casestudy.Clustering._
+import it.unibo.alchemist.model.implementations.actions.{BrownianMove, MoveToTarget}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
@@ -20,7 +21,7 @@ class Clustering
   private lazy val threshold = node.get[Double]("inClusterThr")
   private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
   private lazy val waitingTime = node.get[Int]("waitingTime")
-
+  MoveToTarget
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     // "hysteresis" condition, waiting time before starting a process
@@ -42,8 +43,8 @@ class Clustering
           ClusteringProcessOutput(distanceFromLeader, broadcastLeaderTemperature, clusterInformation)
         }
       )
-      .insideIf { _ => input => output =>
-        inCluster(input.temperaturePerceived, output.leaderTemperature, input.threshold)
+      .insideIf { key => input => _ =>
+        inCluster(input.temperaturePerceived, key.startingTemperature, input.threshold)
       }
       .candidateCondition { candidate }
       /*.candidateWithFeedback { cluster =>
@@ -161,9 +162,9 @@ class Clustering
   }
 
   def isSameCluster[V](reference: ClusterInformation[V], other: ClusterInformation[V]): Boolean = {
-    // currentData.information.centroid.distance(data.information.centroid) +- sameClusterThr
-    (reference.minPoint.distance(other.minPoint)) +- sameClusterThr ||
-    (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
+    reference.centroid.distance(other.centroid) +- sameClusterThr
+    // (reference.minPoint.distance(other.minPoint)) +- sameClusterThr ||
+    // (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
   }
 }
 

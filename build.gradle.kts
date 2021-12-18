@@ -71,6 +71,11 @@ val runAllTest by tasks.register<DefaultTask>("runAllTest") {
     group = alchemistGroup
     description = "Launches all tests (in graphic subsystem)"
 }
+
+val runAllBatchUsingSeed by tasks.register<DefaultTask>("runAllBatchUsingSeed") {
+    group = alchemistGroup
+    description = "Launches all experiments (varying only the seed"
+}
 /*
  * Scan the folder with the simulation files, and create a task for each one of them.
  */
@@ -101,24 +106,31 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
             )
             this.additionalConfiguration()
         }
+        fun batchWithArgs(postFix: String, vararg args: String): JavaExec {
+            val capitalizedName = it.nameWithoutExtension.capitalize()
+            val batch by basetask("run${capitalizedName}Batch${postFix}") {
+                description = "Launches batch experiments for $capitalizedName"
+                jvmArgs("-XX:+AggressiveHeap")
+                maxHeapSize = "${minOf(heap.toInt(), Runtime.getRuntime().availableProcessors() * taskSize)}m"
+                File("data").mkdirs()
+                args(
+                    "-e", "data/${it.nameWithoutExtension}",
+                    "-b",
+                    "-var", "seed", *args,
+                    "-p", threadCount,
+                    "-i", 1
+                )
+            }
+            return batch
+        }
         val capitalizedName = it.nameWithoutExtension.capitalize()
         val graphic by basetask("run${capitalizedName}Graphic")
-        val batch by basetask("run${capitalizedName}Batch") {
-            description = "Launches batch experiments for $capitalizedName"
-            jvmArgs("-XX:+AggressiveHeap")
-            maxHeapSize = "${minOf(heap.toInt(), Runtime.getRuntime().availableProcessors() * taskSize)}m"
-            File("data").mkdirs()
-            args(
-                "-e", "data/${it.nameWithoutExtension}",
-                "-b",
-                "-var", "seed",
-                "-p", threadCount,
-                "-i", 1
-            )
-        }
+        val batchAll = batchWithArgs("allVars","in_cluster_thr", "same_cluster_thr", "candidate_in_hysteresis")
+        val onlySeed = batchWithArgs("onlySeed")
         if(!capitalizedName.contains("Test")) {
             runAllGraphic.dependsOn(graphic)
-            runAllBatch.dependsOn(batch)
+            runAllBatch.dependsOn(batchAll)
+            runAllBatchUsingSeed.dependsOn(onlySeed)
         } else {
             runAllTest.dependsOn(graphic)
         }

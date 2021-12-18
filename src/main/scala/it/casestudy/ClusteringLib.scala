@@ -3,7 +3,7 @@ package it.casestudy
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ClusteringLib {
-  self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with ScafiAlchemistSupport =>
+  self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with BlockC with ScafiAlchemistSupport =>
   type Cluster[K, O] = Map[K, O]
   def emptyCluster[K, O] = Map.empty[K, O]
   def createCluster[K, O](clusterKey: K, clusterData: O): Cluster[K, O] = Map(clusterKey -> clusterData)
@@ -42,29 +42,56 @@ trait ClusteringLib {
 
   trait Overlap[K, I, O] {
     self: ClusteringProcess[K, I, O] =>
+    case class OverlapProcessInput[PI](input: PI, toKill: Set[K])
     def watchDog(cluster: Cluster[K, O], input: I): Set[K]
     def merge(map: Cluster[K, O]): Cluster[K, O]
     final override def apply(): Cluster[K, O] = {
       rep(emptyCluster[K, O]) { clusters =>
-        node.put("clustersKeys", clusters.keySet)
         val toKill = watchDog(clusters, input)
         val clusterKey = mux(isCandidate(clusters)) { Set(keyFactory) } { Set.empty }
-        val processes = sspawn2[K, (I, Set[K]), Option[O]](spawnLogic, clusterKey, (input, toKill))
-        node.put("nonMerged", processes.keySet)
-        val withResult = processes.collect { case (k, Some(v)) => k -> v }
-        merge(withResult)
+        val processes =
+          sspawn2[K, OverlapProcessInput[I], Option[O]](spawnLogic, clusterKey, OverlapProcessInput(input, toKill))
+        val clustersFound = processes.collect { case (k, Some(v)) => k -> v }
+        node.put("allClusters", clustersFound.keySet)
+        /*val merged = // todo move out of there
+          sspawn2[K, OverlapProcessInput[Cluster[K, O]], Cluster[K, O]](
+            mergeLogic,
+            clustersFound.keySet,
+            OverlapProcessInput(clustersFound, toKill)
+          )
+        node.put("mergedIncredible", merged)
+        merged.flatMap { case (_, v) => v }*/
+        merge(clustersFound)
       }
     }
-    private val spawnLogic: K => ((I, Set[K])) => POut[Option[O]] = { clusterKey =>
-      { case (input, toKill) =>
+    private val spawnLogic: K => OverlapProcessInput[I] => POut[Option[O]] = { clusterKey =>
+      { case OverlapProcessInput(input, toKill) =>
         mux(toKill.contains(clusterKey)) {
           POut(Option.empty[O], SpawnInterface.Terminated)
         } {
           val output = process(clusterKey, input)
-          branch(inCondition(clusterKey, input, output)) {
+          mux(inCondition(clusterKey, input, output)) {
             POut(Option(output), SpawnInterface.Output)
           } {
             POut(Option.empty[O], SpawnInterface.External)
+          }
+        }
+      }
+    }
+
+    private val mergeLogic: K => OverlapProcessInput[Cluster[K, O]] => POut[Cluster[K, O]] = { clusterKey =>
+      { case OverlapProcessInput(clusters, toKill) =>
+        mux(toKill.contains(keyFactory)) {
+          POut(Map.empty[K, O], SpawnInterface.Terminated)
+        } {
+          mux(!clusters.keySet.contains(clusterKey)) {
+            POut(Map.empty[K, O], SpawnInterface.External)
+          } {
+            val leader = keyFactory == clusterKey
+            val potential = classicGradient(leader)
+            val collected = C[Double, Cluster[K, O]](potential, _ ++ _, clusters, Map.empty)
+            val merged: Cluster[K, O] = merge(collected)
+            POut(broadcast(leader, merged), SpawnInterface.Output)
           }
         }
       }
