@@ -135,8 +135,9 @@ class Clustering
     clusterInfo
       .foldLeft(Map.empty[ClusteringKey, ClusteringProcessOutput]) { case (acc, (clusteringKey, data)) =>
         val sameCluster = acc.filter { case (_, currentData) =>
-          currentData.information.centroid.distance(data.information.centroid) +- sameClusterThr
+          isSameCluster(currentData.information, data.information)
         }
+        // breaks symmetry
         val toRemove = sameCluster.filter { case (currentClusterKey, _) =>
           currentClusterKey.leaderId > clusteringKey.leaderId
         }
@@ -157,6 +158,12 @@ class Clustering
     val difference = myTemperature - leaderTemperature
     // Math.abs(difference) <= threshold
     difference >= 0.0 && difference <= threshold
+  }
+
+  def isSameCluster[V](reference: ClusterInformation[V], other: ClusterInformation[V]): Boolean = {
+    // currentData.information.centroid.distance(data.information.centroid) +- sameClusterThr
+    (reference.minPoint.distance(other.minPoint)) +- sameClusterThr ||
+    (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
   }
 }
 
