@@ -1,6 +1,6 @@
 package it.casestudy
 import it.casestudy.Clustering._
-import it.unibo.alchemist.model.implementations.actions.{BrownianMove, MoveToTarget}
+import it.scafi.MovementUtils
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
@@ -16,19 +16,21 @@ class Clustering
     with CustomSpawn
     with TimeUtils
     with StateManagement
+    with MovementUtils
     with ClusteringLib {
+  // Context
   implicit val precision: Precision = Precision(0.000001)
+  // Alchemist environment variables
   private lazy val threshold = node.get[Double]("inClusterThr")
   private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
   private lazy val waitingTime = node.get[Int]("waitingTime")
-  MoveToTarget
+
   override def main(): Any = {
-    val temperature: Double = sense[java.lang.Double]("temperature")
-    // "hysteresis" condition, waiting time before starting a process
+    val temperature: Double = sense[java.lang.Double](Molecules.temperature)
+    // waiting time before starting a process
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
       false
     }
-
     val merged = cluster
       .input { ClusteringProcessInput(temperature, threshold, candidate) }
       .keyGenerator { ClusteringKey(mid())(temperature, timestamp()) }
@@ -46,29 +48,18 @@ class Clustering
       .insideIf { key => input => _ =>
         inCluster(input.temperaturePerceived, key.startingTemperature, input.threshold)
       }
-      .candidateCondition { candidate }
-      /*.candidateWithFeedback { cluster =>
+      // .candidateCondition { candidate }
+      .candidateWithFeedback { cluster =>
         (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
-      }*/
+      }
       .mergeWhen(clusters => mergeCluster(clusters))
       .killWhen(clusters => watchDog(clusters, candidate))
       .overlap()
-    // val merged = mergeCluster(clusters)
-    // A way to "merge" clusters, I am interested in the cluster with the lowest temperature.
-    val coldestCluster = merged.minByOption(
-      _._1.startingTemperature
-    )
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
-    node.put("temperaturePerceived", temperature)
-    node.put("candidate", candidate)
-    node.put("clusters", merged.keySet.map(_.leaderId))
-    // node.put("centroids", clusters.map(_._2.information.centroid))
-    // node.put("fullClustersInfo", clusters)
-    coldestCluster match {
-      case Some((ClusteringKey(leader), _)) => node.put("clusterId", leader)
-      case None if node.has("clusterId") => node.remove("clusterId")
-      case _ =>
-    }
+    node.put(Molecules.temperaturePerceived, temperature)
+    node.put(Molecules.candidate, candidate)
+    node.put(Molecules.clusters, merged.keySet.map(_.leaderId))
+    movementLogic(merged)
     candidate
   }
   // fix for sensing layers
@@ -102,7 +93,8 @@ class Clustering
    * @return the set of processes that will be killed
    */
   def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput], candidate: Boolean): Set[ClusteringKey] = {
-    processes.filter { case (ClusteringKey(id), _) => mid() == id && !candidate }.keySet
+    val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
+    processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
   }
 
   /**
@@ -166,6 +158,14 @@ class Clustering
     // (reference.minPoint.distance(other.minPoint)) +- sameClusterThr ||
     // (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
   }
+
+  def movementLogic(clusters: Cluster[ClusteringKey, ClusteringProcessOutput]): Unit = {
+    if (clusters.keySet.map(_.leaderId).contains(mid())) {
+      node.put(Molecules.target, currentPosition())
+    } else {
+      node.put(Molecules.target, explore(CircularZone((0, 0), 5), 100, 0.01))
+    }
+  }
 }
 
 object Clustering {
@@ -181,4 +181,12 @@ object Clustering {
     wasCandidate: Boolean = false,
     clusterToKill: Set[ClusteringKey] = Set.empty
   )
+
+  object Molecules {
+    val temperature = "temperature"
+    val target = "target"
+    val clusters = "clusters"
+    val temperaturePerceived = "temperaturePerceived"
+    val candidate = "candidate"
+  }
 }

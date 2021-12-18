@@ -13,6 +13,7 @@ variables:
     type: ArbitraryVariable
     parameters: [ 3, [ 5 ] ]
 
+_zero: &zero "it.unibo.scafi.space.Point2D(0,0)"
 seeds: { scenario: *seed, simulation: *seed }
 
 terminate: { type: AfterTime, parameters: [*simulation_length] }
@@ -35,12 +36,8 @@ layers:
     molecule: base-temperature
 
   - type: BidimensionalGaussianLayer
-    parameters: [ 3, -4, -2.0, 1.0 ]
+    parameters: [ 3, -2, -2.0, 1.0 ]
     molecule: temperature-1
-
-  - type: BidimensionalGaussianLayer
-    parameters: [ 0.0, 0.0, -2.0, 1.0 ]
-    molecule: temperature-2
 
   - type: BidimensionalGaussianLayer
     parameters: [ 2.0, 3.5, -2.0, 1.0 ]
@@ -64,7 +61,8 @@ deployments:
     - *program
     - time-distribution: 10
       type: Event
-      actions: { type: BrownianMove, parameters: [ 0.05 ] }
+      #actions: { type: BrownianMove, parameters: [ 0.05 ] }
+      actions: { type: MoveToTarget, parameters: [ target, 0.01 ] }
   contents:
     - molecule: inClusterThr
       concentration: *in_cluster_thr
@@ -72,7 +70,10 @@ deployments:
       concentration: *same_cluster_thr
     - molecule: waitingTime
       concentration: *candidate_in_hysteresis
-
+    - molecule: move
+      concentration: true
+    - molecule: target
+      concentration: *zero
 export:
   - type: CSVExporter
     parameters: ["standardPatternsMovement", 1.0, "./data"]
