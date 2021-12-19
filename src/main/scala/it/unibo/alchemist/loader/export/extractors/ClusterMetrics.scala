@@ -8,10 +8,13 @@ import it.unibo.alchemist.model.interfaces
 import it.unibo.alchemist.model.interfaces.{Environment, Position, Reaction}
 
 import java.util
+import scala.collection.compat.immutable.ArraySeq
 import scala.jdk.CollectionConverters.{IteratorHasAsScala, MapHasAsJava}
 
 class ClusterMetrics extends Extractor[Double] {
-  override def getColumnNames: util.List[String] = util.Arrays.asList("validity")
+  type Clusters = Map[Int, List[Vector[Double]]]
+
+  override def getColumnNames: util.List[String] = util.Arrays.asList("silhouette", "dunnIndex")
 
   override def extractData[T](
     environment: Environment[T, _],
@@ -31,20 +34,23 @@ class ClusterMetrics extends Extractor[Double] {
         id -> elements.map { case (_, node, manager) =>
           val point = unsafeEnv.getPosition(node)
           val data = point.getCoordinates :+ manager.get[Double]("temperaturePerceived")
-          linalg.Vector.apply[Double](data: _*)
+
+          linalg.Vector.apply[Double](ArraySeq.unsafeWrapArray(data): _*)
         }
       }
 
-    Map("validity" -> silhouette(clusters)).asJava
+    Map("silhouette" -> silhouette(clusters), "dunnIndex" -> dunnIndex(clusters)).asJava
   }
+
   // from https://en.wikipedia.org/wiki/Silhouette_(clustering)
-  def silhouette(clusters: Map[Int, List[Vector[Double]]]): Double = {
+  def silhouette(clusters: Clusters): Double = zeroIfEmptyOrElse(clusters) {
     def internal(target: Vector[Double], samples: List[Vector[Double]]): Double = {
       val distances = samples.map(sample => Math.sqrt(linalg.squaredDistance(target, sample)))
       distances.sum / distances.size
     }
+
     def external(target: Vector[Double], clusters: Map[Int, List[Vector[Double]]]): Double = {
-      clusters.map { case (k, v) => internal(target, v) }.min
+      clusters.map { case (k, v) => internal(target, v) }.minOption.getOrElse(Double.PositiveInfinity)
     }
 
     val internalExternalFactors = for {
@@ -55,11 +61,32 @@ class ClusterMetrics extends Extractor[Double] {
     val result =
       internalExternalFactors.map { case (a, b) => (b - a) / math.max(a, b) }.sum / internalExternalFactors.size
 
-    if (result.isNaN) {
-      0
-    } else {
-      result
-    }
+    result
   }
 
+  // from http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1041.6282&rep=rep1&type=pdf
+  def dunnIndex(clusters: Clusters): Double = zeroIfEmptyOrElse(clusters) {
+    val centroids = clusters.map { case (id, values) =>
+      val result: linalg.Vector[Double] = values.reduce(_ + _)
+      id -> result / values.size.toDouble
+    }
+    val maxDistances = clusters.map { case (id, values) =>
+      val min = values.reduce(linalg.min(_, _))
+      val max = values.reduce(linalg.max(_, _))
+      Math.sqrt(linalg.squaredDistance(min, max))
+
+    }
+    val centroidDistances = for {
+      (id, centroid) <- centroids
+      (_, otherCentroid) <- (centroids.removed(id))
+    } yield (Math.sqrt(linalg.squaredDistance(centroid, otherCentroid)))
+
+    centroidDistances.minOption.getOrElse(0.0) / maxDistances.maxOption.getOrElse(1.0)
+  }
+
+  def zeroIfEmptyOrElse(cluster: Clusters)(logic: => Double): Double = if (cluster.nonEmpty) {
+    logic
+  } else {
+    Double.NaN
+  }
 }

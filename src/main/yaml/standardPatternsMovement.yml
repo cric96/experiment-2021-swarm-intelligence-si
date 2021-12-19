@@ -12,6 +12,10 @@ variables:
   candidate_in_hysteresis: &candidate_in_hysteresis
     type: ArbitraryVariable
     parameters: [ 3, [ 5 ] ]
+  speed: &speed
+    type: ArbitraryVariable
+    parameters: [ 0.01, [ 0.02, 0.03 ] ]
+
 
 _zero: &zero "it.unibo.scafi.space.Point2D(0,0)"
 seeds: { scenario: *seed, simulation: *seed }
@@ -61,8 +65,7 @@ deployments:
     - *program
     - time-distribution: 10
       type: Event
-      #actions: { type: BrownianMove, parameters: [ 0.05 ] }
-      actions: { type: MoveToTarget, parameters: [ target, 0.01 ] }
+      actions: { type: MoveToTarget, parameters: [ target, *speed ] }
   contents:
     - molecule: inClusterThr
       concentration: *in_cluster_thr
@@ -85,4 +88,3 @@ export:
       - type: ClusterMisclassifications
         parameters: [ 0.05, "temperature-1", "temperature-2", "temperature-3", "temperature-4" ]
       - type: ClusterMetrics
-        filters:

@@ -125,7 +125,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
         }
         val capitalizedName = it.nameWithoutExtension.capitalize()
         val graphic by basetask("run${capitalizedName}Graphic")
-        val batchAll = batchWithArgs("AllVars","in_cluster_thr", "same_cluster_thr", "candidate_in_hysteresis")
+        val batchAll = batchWithArgs("AllVars","in_cluster_thr", "same_cluster_thr", "candidate_in_hysteresis", "speed")
         val onlySeed = batchWithArgs("OnlySeed")
         if(!capitalizedName.contains("Test")) {
             runAllGraphic.dependsOn(graphic)

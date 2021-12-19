@@ -8,8 +8,9 @@ the_plots_labels:
   - 'cluster-4'
   - 'errors'
   - 'silhouette'
+  - 'dunn index'
 the_plots_formats:
-  - [0,8]
+  - [0,8,9]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors

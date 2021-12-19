@@ -26,7 +26,7 @@ case class ClusterData[V: Numeric](point: P, data: V)(implicit ev: Double => V) 
 
   def /(scalar: Double): ClusterData[V] = this.underlyingRep / scalar
 
-  def *(scalar: Double): ClusterData[V] = this.underlyingRep / scalar
+  def *(scalar: Double): ClusterData[V] = this.underlyingRep * scalar
 
   def distance(other: ClusterData[V]): Double =
     Math.sqrt(linalg.squaredDistance(this.underlyingRep, other.underlyingRep))
