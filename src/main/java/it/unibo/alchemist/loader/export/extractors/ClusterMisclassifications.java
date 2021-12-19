@@ -4,35 +4,32 @@ import it.unibo.alchemist.loader.export.Extractor;
 import it.unibo.alchemist.model.implementations.layers.BidimensionalGaussianLayer;
 import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule;
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager;
-import it.unibo.alchemist.model.interfaces.*;
 import it.unibo.alchemist.model.interfaces.Time;
+import it.unibo.alchemist.model.interfaces.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class ClusterEvaluation implements Extractor<Double> {
+public class ClusterMisclassifications implements Extractor<Long> {
     private final Double thr;
     private final List<String> columns;
 
-    public ClusterEvaluation(Double thr, String... names) {
+    public ClusterMisclassifications(Double thr, String... names) {
         this.columns = Arrays.asList(names);
         this.thr = thr;
     }
     @NotNull
     @Override
     public List<String> getColumnNames() {
-        return this.columns;
+        return Collections.singletonList("errors");
     }
 
     @NotNull
     @Override
-    public <T> Map<String, Double> extractData(@NotNull Environment<T, ?> environment, @Nullable Reaction<T> reaction, @NotNull Time time, long l) {
+    public <T> Map<String, Long> extractData(@NotNull Environment<T, ?> environment, @Nullable Reaction<T> reaction, @NotNull Time time, long l) {
         final Environment<T, Position2D<?>> unsafeEnv = (Environment<T, Position2D<?>>) environment;
         var layers = columns
                 .stream()
@@ -43,20 +40,14 @@ public class ClusterEvaluation implements Extractor<Double> {
                 .filter(layer -> layer instanceof BidimensionalGaussianLayer)
                 .collect(Collectors.toList());
 
-        var countsNodeForLayers = layers.stream().map(layer ->
-                unsafeEnv.getNodes()
-                        .stream()
-                        .map(node -> Map.entry(node, unsafeEnv.getPosition(node)))
-                        .map(node -> Map.entry(node.getKey(), (Double) layer.getValue(node.getValue())))
-                        .filter(node -> Math.abs(node.getValue()) > thr && hasCluster(node.getKey()))
-                        .mapToDouble(Map.Entry::getValue)
-                        .count()
-                ).collect(Collectors.toList());
+        var wrongNodes = unsafeEnv.getNodes().stream()
+                .map(node -> Map.entry(node, unsafeEnv.getPosition(node)))
+                .filter(node -> layers.stream()
+                        .map(layer -> Map.entry(node.getKey(), (Double) layer.getValue(node.getValue())))
+                        .allMatch(nodeAndValue -> hasCluster(nodeAndValue.getKey()) && Math.abs(nodeAndValue.getValue()) < thr))
+                .count();
 
-        return IntStream
-                .range(0, columns.size())
-                .mapToObj(i -> Map.entry(columns.get(i), countsNodeForLayers.get(i)))
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().doubleValue()));
+        return Map.of("errors", wrongNodes);
     }
     private Boolean hasCluster(Node<?> node) {
         var manager = new SimpleNodeManager<>(node);

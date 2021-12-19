@@ -41,15 +41,15 @@ layers:
 
   - type: BidimensionalGaussianLayer
     parameters: [ 2.0, 3.5, -2.0, 1.0 ]
-    molecule: temperature-3
+    molecule: temperature-2
 
   - type: BidimensionalGaussianLayer
     parameters: [ -3.0, 2.0, -2.0, 1.0 ]
-    molecule: temperature-4
+    molecule: temperature-3
 
   - type: BidimensionalGaussianLayer
     parameters: [ -3, -3, -2.0, 1.5 ]
-    molecule: temperature-5
+    molecule: temperature-4
 
   - type: LayerAggregator
     molecule: temperature
@@ -80,3 +80,7 @@ export:
     data:
       - type: Time
       - type: ClusterCount
+      - type: ClusterEvaluation
+        parameters: [ 0.05, "temperature-1", "temperature-2", "temperature-3", "temperature-4" ]
+      - type: ClusterMisclassifications
+        parameters: [ 0.05, "temperature-1", "temperature-2", "temperature-3", "temperature-4" ]
