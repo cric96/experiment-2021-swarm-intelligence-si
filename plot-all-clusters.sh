@@ -16,6 +16,7 @@ printf '[\33[01;32m  movement \33[01;37m]\n'
 python plots/plotter.py plots/config.yml data "standardPatternsMovement*" movement
 python plots/plotter.py plots/cluster-node-count.yml data "standardPatternsMovement*" movement-count
 python plots/plotter.py plots/errors.yml data "standardPatternsMovement*" movement-errors
+python plots/plotter.py plots/metrics.yml data "standardPatternsMovement*" movement-metrics
 printf '[\33[01;32m  overlay \33[01;37m]\n'
 python plots/plotter.py plots/config.yml data "overlay*" overlay
 
