@@ -99,5 +99,38 @@ class ClusterBasedOnNumber extends Libs {
 }
 
 class ClusterAdaptWithRange extends Libs {
-  override def main(): Any = {}
+  override def main(): Any = {
+    val temperature: Double = sense[java.lang.Double]("temperature")
+    val startingRange: Double = 0
+    val step = 0.01
+    val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
+    val candidate = branch(id == mid()) { T(5) <= 0 } { false }
+    val howMany = 20
+    val clusters = cluster
+      .input {}
+      .keyGenerator { mid() }
+      .process { id => _ =>
+        val leader = id == mid()
+        val potential = classicGradient(leader)
+        val range = rep(startingRange) { range =>
+          {
+            val count = C[Double, Int](potential, _ + _, 1, 0)
+            if (count > howMany) { range - step }
+            else if (count < howMany) {
+              range + step
+            } else {
+              range
+            }
+          }
+        }
+        val correctRange = mux(leader)(range)(-1)
+        (potential, broadcast(leader, correctRange))
+      }
+      .insideIf(_ => _ => output => output._1 < output._2)
+      .candidateCondition(candidate)
+      .overlap()
+
+    node.put("candidate", candidate)
+    node.put("clusters", clusters.keySet)
+  }
 }

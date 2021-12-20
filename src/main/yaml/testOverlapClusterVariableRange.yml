@@ -5,7 +5,7 @@ variables:
 
 seeds: { scenario: *seed, simulation: *seed }
 
-terminate: { type: AfterTime, parameters: [ 50 ] }
+terminate: { type: AfterTime, parameters: [ 150 ] }
 
 network-model:
   type: ConnectWithinDistance
@@ -16,7 +16,7 @@ _gradient: &program
     type: Event
     actions:
     - type: RunScafiProgram
-      parameters: [ it.examples.TemperatureOverlapBasedProblem ]
+      parameters: [ it.examples.ClusterAdaptWithRange ]
   - program: send
 
 layers:
