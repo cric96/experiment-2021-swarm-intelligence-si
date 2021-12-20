@@ -52,7 +52,6 @@ public class ClusterEvaluation implements Extractor<Double> {
                         .mapToDouble(Map.Entry::getValue)
                         .count()
                 ).collect(Collectors.toList());
-
         return IntStream
                 .range(0, columns.size())
                 .mapToObj(i -> {

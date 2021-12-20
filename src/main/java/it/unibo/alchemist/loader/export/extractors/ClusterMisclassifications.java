@@ -30,6 +30,9 @@ public class ClusterMisclassifications implements Extractor<Long> {
     @NotNull
     @Override
     public <T> Map<String, Long> extractData(@NotNull Environment<T, ?> environment, @Nullable Reaction<T> reaction, @NotNull Time time, long l) {
+        if(columns.isEmpty()) {
+            return Map.of("errors", 0L);
+        }
         final Environment<T, Position2D<?>> unsafeEnv = (Environment<T, Position2D<?>>) environment;
         var layers = columns
                 .stream()

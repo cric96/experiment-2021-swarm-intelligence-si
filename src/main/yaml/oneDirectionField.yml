@@ -31,7 +31,7 @@ _gradient: &program
 
 layers:
   - type: OneDirectionGradientLayer
-    parameters: [ 18.0, -5.0, -5.0, 0.1, 0.0, ]
+    parameters: [ 18.0, 0.0, 0.0, 0.2, 0.0, ]
     molecule: base-temperature
   - type: LayerAggregator
     molecule: temperature
@@ -47,6 +47,8 @@ deployments:
       concentration: *same_cluster_thr
     - molecule: waitingTime
       concentration: *candidate_in_hysteresis
+    - molecule: absoluteValueCondition
+      concentration: true
 
 export:
   - type: CSVExporter
@@ -55,7 +57,7 @@ export:
       - type: Time
       - type: ClusterCount
       - type: ClusterEvaluation
-        parameters: [ 0.05, "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
+        parameters: [ 1, "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
       - type: ClusterMisclassifications
-        parameters: [ 0.05, "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
+        parameters: [ 0.01  ]
       - type: ClusterMetrics
