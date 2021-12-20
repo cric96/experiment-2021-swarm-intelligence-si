@@ -24,6 +24,11 @@ class Clustering
   private lazy val threshold = node.get[Double]("inClusterThr")
   private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
   private lazy val waitingTime = node.get[Int]("waitingTime")
+  // Constants
+  private val maxFollowDirectionTime = 100
+  private val reachTargetThr = 0.01
+  private val zoneSize = 0.5
+  private val zoneCenter = (0.0, 0.0)
 
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double](Molecules.temperature)
@@ -163,7 +168,7 @@ class Clustering
     if (clusters.keySet.map(_.leaderId).contains(mid())) {
       node.put(Molecules.target, currentPosition())
     } else {
-      node.put(Molecules.target, explore(CircularZone((0, 0), 5), 100, 0.01))
+      node.put(Molecules.target, explore(CircularZone(zoneCenter, zoneSize), maxFollowDirectionTime, reachTargetThr))
     }
   }
 }

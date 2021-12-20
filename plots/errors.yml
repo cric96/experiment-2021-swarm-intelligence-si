@@ -6,9 +6,10 @@ the_plots_labels:
   - 'cluster-2'
   - 'cluster-3'
   - 'cluster-4'
+  - 'cluster-5'
   - 'errors'
 the_plots_formats:
-  - [0,7]
+  - [0,8]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
@@ -42,5 +43,5 @@ samplingField:
 title_prefix: ''
 excluded_titles:
 line_styles:
-  - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
+  - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
 format: "png"

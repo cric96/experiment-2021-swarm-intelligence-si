@@ -55,7 +55,13 @@ public class ClusterEvaluation implements Extractor<Double> {
 
         return IntStream
                 .range(0, columns.size())
-                .mapToObj(i -> Map.entry(columns.get(i), countsNodeForLayers.get(i)))
+                .mapToObj(i -> {
+                    if(i >= countsNodeForLayers.size()) {
+                        return Map.entry(columns.get(i), 0);
+                    } else {
+                        return Map.entry(columns.get(i), countsNodeForLayers.get(i));
+                    }
+                })
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().doubleValue()));
     }
     private Boolean hasCluster(Node<?> node) {

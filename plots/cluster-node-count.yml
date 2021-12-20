@@ -6,6 +6,7 @@ the_plots_labels:
   - 'cluster-2'
   - 'cluster-3'
   - 'cluster-4'
+  - 'cluster-5'
 the_plots_formats:
   - [0,3,4,5,6]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
