@@ -66,22 +66,29 @@ class ClusterMetrics extends Extractor[Double] {
 
   // from http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1041.6282&rep=rep1&type=pdf
   def dunnIndex(clusters: Clusters): Double = zeroIfEmptyOrElse(clusters) {
+    val defaultDenominator = 0.0
+    val defaultNumerator = 0.0
     val centroids = clusters.map { case (id, values) =>
       val result: linalg.Vector[Double] = values.reduce(_ + _)
       id -> result / values.size.toDouble
     }
     val maxDistances = clusters.map { case (id, values) =>
-      val min = values.reduce(linalg.min(_, _))
-      val max = values.reduce(linalg.max(_, _))
-      Math.sqrt(linalg.squaredDistance(min, max))
+      val cartesianProduct = for {
+        left <- values
+        right <- values
+      } yield (left, right)
 
+      cartesianProduct
+        .map { case (left, right) => Math.sqrt(linalg.squaredDistance(left, right)) }
+        .maxOption
+        .getOrElse(defaultDenominator)
     }
     val centroidDistances = for {
       (id, centroid) <- centroids
       (_, otherCentroid) <- (centroids.removed(id))
     } yield (Math.sqrt(linalg.squaredDistance(centroid, otherCentroid)))
 
-    centroidDistances.minOption.getOrElse(0.0) / maxDistances.maxOption.getOrElse(1.0)
+    centroidDistances.minOption.getOrElse(defaultNumerator) / maxDistances.maxOption.getOrElse(defaultDenominator)
   }
 
   def zeroIfEmptyOrElse(cluster: Clusters)(logic: => Double): Double = if (cluster.nonEmpty) {
