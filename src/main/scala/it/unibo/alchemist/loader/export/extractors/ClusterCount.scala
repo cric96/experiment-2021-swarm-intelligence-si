@@ -2,6 +2,7 @@ package it.unibo.alchemist.loader.`export`.extractors
 
 import it.casestudy.Clustering.ClusteringKey
 import it.unibo.alchemist.loader.`export`.Extractor
+import it.unibo.alchemist.loader.variables.ArbitraryVariable
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces
 import it.unibo.alchemist.model.interfaces.{Environment, Reaction}

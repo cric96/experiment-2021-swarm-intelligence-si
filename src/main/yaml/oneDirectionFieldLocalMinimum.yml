@@ -1,17 +1,24 @@
 incarnation: scafi
 
 variables:
-  seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
+  seed: &seed { min: 0.0, max: 20.0, step: 1.0, default: 0.0 }
   simulation_length: &simulation_length { formula: 100.0 }
+  density: &density
+    type: ArbitraryVariable
+    parameters: [ 0.5, [ 0.25, 0.75 ] ]
+  grid_delta: &grid_delta
+    formula: 0.25
+  neighbourhood_radius: &neighbourhood_radius
+    formula: 'grid_delta + density'
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
-    parameters: [ 1.0, [ 0.5 ] ]
+    parameters: [ 1.0, [ 0.5, 1.5 ] ]
   same_cluster_thr: &same_cluster_thr
     type: ArbitraryVariable
-    parameters: [ 0.1, [ 0.5 ] ]
+    parameters: [ 0.1, [ 0.5, 1 ] ]
   candidate_in_hysteresis: &candidate_in_hysteresis
     type: ArbitraryVariable
-    parameters: [ 3, [ 5 ] ]
+    parameters: [ 3, [ 5, 7, 1 ] ]
 
 seeds: { scenario: *seed, simulation: *seed }
 
@@ -19,7 +26,7 @@ terminate: { type: AfterTime, parameters: [*simulation_length] }
 
 network-model:
   type: ConnectWithinDistance
-  parameters: [0.75]
+  parameters: [*neighbourhood_radius]
 
 _gradient: &program
   - time-distribution: 1
@@ -38,7 +45,7 @@ layers:
 
 deployments:
   type: Grid
-  parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
+  parameters: [-5, -5, 5, 5, *density, *density, *grid_delta, *grid_delta]
   programs: *program
   contents:
     - molecule: inClusterThr
