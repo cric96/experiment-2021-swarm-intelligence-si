@@ -5,7 +5,7 @@ variables:
   simulation_length: &simulation_length { formula: 100.0 }
   density: &density
     type: ArbitraryVariable
-    parameters: [ 0.5, [ 0.25, 0.5,0.75 ] ]
+    parameters: [ 0.5, [ 0.5, 0.75 ] ]
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
     parameters: [ 1.0, [ 0.5, 1.0, 1.5 ] ]
