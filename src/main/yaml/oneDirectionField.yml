@@ -41,7 +41,7 @@ _gradient: &program
 
 layers:
   - type: OneDirectionGradientLayer
-    parameters: [ 18.0, 0.0, 0.0, 0.2, 0.0, ]
+    parameters: [ 18.0, -5.0, -5.0, 0.1, 0.0 ]
     molecule: base-temperature
   - type: LayerAggregator
     molecule: temperature
