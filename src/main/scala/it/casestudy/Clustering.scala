@@ -27,7 +27,7 @@ class Clustering
   // Constants
   private val maxFollowDirectionTime = 100
   private val reachTargetThr = 0.01
-  private val zoneSize = 0.5
+  private val zoneSize = 5
   private val zoneCenter = (0.0, 0.0)
 
   override def main(): Any = {
