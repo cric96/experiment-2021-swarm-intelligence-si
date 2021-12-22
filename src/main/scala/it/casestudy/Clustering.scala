@@ -1,6 +1,6 @@
 package it.casestudy
 import it.casestudy.Clustering._
-import it.scafi.MovementUtils
+import it.scafi.{MovementUtils, ProcessFix}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.util.Try
@@ -13,7 +13,7 @@ class Clustering
     with Gradients
     with BlockG
     with BlockC
-    with CustomSpawn
+    with ProcessFix
     with TimeUtils
     with StateManagement
     with MovementUtils

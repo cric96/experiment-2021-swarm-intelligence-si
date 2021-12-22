@@ -1,7 +1,7 @@
 package it.examples
 
 import it.casestudy.ClusteringLib
-import it.scafi.SenseLayers
+import it.scafi.{ProcessFix, SenseLayers}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist.{ScafiAlchemistSupport, _}
 
 trait Libs
@@ -13,7 +13,7 @@ trait Libs
     with Gradients
     with BlockG
     with BlockC
-    with CustomSpawn
+    with ProcessFix
     with TimeUtils
     with StateManagement
     with ClusteringLib {}
