@@ -3,8 +3,6 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ProcessFix extends CustomSpawn {
   self: AggregateProgram =>
   override def runOnSharedKeysWithShare[K, A, R](process: K => (R, Boolean), params: Set[K]): Map[K, R] = {
-
-    println("Here..")
     share(Map[K, R]())((loc, nbr) => {
       (includingSelf
         .unionHoodSet(nbr().keySet ++ params))
