@@ -2,6 +2,7 @@ package it.casestudy
 
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
+
 trait ClusteringLib {
   self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with BlockC with ScafiAlchemistSupport =>
   type Cluster[K, O] = Map[K, O]
