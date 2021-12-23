@@ -5,7 +5,7 @@ variables:
 
 seeds: { scenario: *seed, simulation: *seed }
 
-terminate: { type: AfterTime, parameters: [ 50 ] }
+terminate: { type: AfterTime, parameters: [ 150 ] }
 
 network-model:
   type: ConnectWithinDistance

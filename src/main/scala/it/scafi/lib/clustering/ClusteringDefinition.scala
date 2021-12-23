@@ -55,9 +55,7 @@ trait ClusteringDefinition {
         val clusters = findClusters(toKill)
         val unionClusters = clusterUnion(toKill, clusters)
         (watchDog(unionClusters), unionClusters)
-      }
-
-      emptyClusterDivision
+      }._2
     }
 
     private def findClusters(toKill: Set[Key]): Cluster = {
@@ -67,11 +65,17 @@ trait ClusteringDefinition {
           mux(toKill.contains(key)) {
             POut(Option.empty[ClusterData], SpawnInterface.Terminated)
           } {
-            val expandClusterFromLeader = G(processOwner, input, expand, metric)
-            branch(inCondition(key, expandClusterFromLeader)) {
-              POut(computeSummaryAndShare(processOwner), SpawnInterface.Output)
-            } {
-              POut(Option.empty[ClusterData], SpawnInterface.External)
+            val center = mux(processOwner) { Option(input) } { Option.empty[Input] }
+            val expandClusterFromLeader = G[Option[Input]](processOwner, center, i => i.map(expand), metric)
+            expandClusterFromLeader match {
+              case None =>
+                POut(Option.empty[ClusterData], SpawnInterface.External)
+              case Some(temperature) =>
+                branch(inCondition(key, temperature)) {
+                  POut(computeSummaryAndShare(processOwner), SpawnInterface.Output)
+                } {
+                  POut(Option.empty[ClusterData], SpawnInterface.External)
+                }
             }
           }
         }
@@ -92,7 +96,8 @@ trait ClusteringDefinition {
               val potential = classicGradient(processOwner, metric)
               val allInformation = C[Double, Cluster](potential, _ ++ _, input, emptyCluster)
               val clusterDivision = ClusterDivision(allInformation, mergePolicy(allInformation))
-              POut(broadcast(processOwner, clusterDivision), SpawnInterface.External)
+              val result = broadcast(processOwner, clusterDivision)
+              POut(result, SpawnInterface.Output)
             } {
               POut(emptyClusterDivision, SpawnInterface.External)
             }
@@ -100,9 +105,12 @@ trait ClusteringDefinition {
         }
       }
       val keys = localCluster.keySet
-      sspawn2(unionLogic, keys, OverlapProcessInput(localCluster, toKill)).headOption
-        .map(_._2)
-        .getOrElse(emptyClusterDivision)
+      val clusterMerged = sspawn2(unionLogic, keys, OverlapProcessInput(localCluster, toKill))
+      val foldResult = clusterMerged.values
+        .foldLeft(emptyClusterDivision) { case (acc, data) =>
+          ClusterDivision(acc.all ++ data.all, acc.merged ++ data.merged)
+        }
+      foldResult
     }
   }
 }

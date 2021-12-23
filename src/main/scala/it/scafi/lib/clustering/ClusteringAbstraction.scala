@@ -9,7 +9,6 @@ trait ClusteringAbstraction {
     type ClusterData
     type Key
     type Cluster = Map[Key, ClusterData]
-
     case class ClusterDivision(all: Cluster, merged: Cluster)
 
     def input: Input
@@ -24,8 +23,8 @@ trait ClusteringAbstraction {
     def inCondition(key: Key, data: Input): Boolean
     def apply(): ClusterDivision
 
+    def emptyClusterDivision: ClusterDivision = ClusterDivision(emptyCluster, emptyCluster)
     protected def emptyCluster: Cluster = Map.empty[Key, ClusterData]
-    protected def emptyClusterDivision: ClusterDivision = ClusterDivision(emptyCluster, emptyCluster)
     protected def createCluster(clusterKey: Key, clusterData: ClusterData): ClusterDivision = {
       val clusters = Map(clusterKey -> clusterData)
       ClusterDivision(clusters, clusters)
