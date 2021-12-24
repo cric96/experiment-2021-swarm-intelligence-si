@@ -10,9 +10,9 @@ trait ClusteringDefinition {
     def computeSummaryAndShare(leader: Boolean): Option[ClusterData] = {
       val potential = classicGradient(leader, metric)
       val summary =
-        C(potential, (left, right) => combineOption(left, right), Some(localData), Option.empty[ClusterData])
+        C(potential, (left, right) => combineOption(left, right), Some(localData), Option.empty[LocalData])
       val broadcastSummary: Option[ClusterData] =
-        broadcast(isCandidate, summary.map(finalization))
+        broadcast(leader, branch(leader) { summary.map(finalization) } { None })
       broadcastSummary
     }
   }

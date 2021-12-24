@@ -7,19 +7,20 @@ trait ClusteringAbstraction {
   trait Clustering {
     type Input
     type ClusterData
+    type LocalData
     type Key
     type Cluster = Map[Key, ClusterData]
     case class ClusterDivision(all: Cluster, merged: Cluster)
 
     def input: Input
-    def localData: ClusterData
+    def localData: LocalData
     def keyFactory: Key
     def metric: Metric
     def isCandidate: Boolean
 
     def expand(input: Input): Input
-    def collect(accumulator: ClusterData, local: ClusterData): ClusterData
-    def finalization(clusterData: ClusterData): ClusterData
+    def collect(accumulator: LocalData, local: LocalData): LocalData
+    def finalization(clusterData: LocalData): ClusterData
     def inCondition(key: Key, data: Input): Boolean
     def apply(): ClusterDivision
 
@@ -29,7 +30,7 @@ trait ClusteringAbstraction {
       val clusters = Map(clusterKey -> clusterData)
       ClusterDivision(clusters, clusters)
     }
-    protected def combineOption(left: Option[ClusterData], right: Option[ClusterData]): Option[ClusterData] =
+    protected def combineOption(left: Option[LocalData], right: Option[LocalData]): Option[LocalData] =
       (left, right) match {
         case (None, right @ Some(_)) => right
         case (left @ Some(_), None) => left
@@ -39,20 +40,21 @@ trait ClusteringAbstraction {
   }
 
   object Clustering {
-    type Aux[K, I, D] = Clustering {
+    type Aux[K, I, D, C] = Clustering {
       type Key = K
       type Input = I
-      type ClusterData = D
+      type LocalData = D
+      type ClusterData = C
     }
 
-    type Cluster[K, D] = (Clustering {
+    type Cluster[K, C] = (Clustering {
       type Key = K
-      type ClusterData = D
+      type ClusterData = C
     })#Cluster
 
-    type ClusteringDivision[K, D] = (Clustering {
+    type ClusteringDivision[K, C] = (Clustering {
       type Key = K
-      type ClusterData = D
+      type ClusterData = C
     })#ClusterDivision
   }
 }
