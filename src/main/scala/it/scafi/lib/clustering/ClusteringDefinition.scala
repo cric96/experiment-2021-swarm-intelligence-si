@@ -4,9 +4,17 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 trait ClusteringDefinition {
   self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with BlockC with ClusteringAbstraction =>
 
+  /**
+   * 
+   */
   trait ClusteringCommon {
     self: Clustering =>
 
+    /**
+     * 
+     * @param leader
+     * @return
+     */
     def computeSummaryAndShare(leader: Boolean): Option[ClusterData] = {
       val potential = classicGradient(leader, metric)
       val summary =
@@ -16,6 +24,10 @@ trait ClusteringDefinition {
       broadcastSummary
     }
   }
+
+  /**
+   * 
+   */
   trait Disjoint extends ClusteringCommon {
     self: Clustering =>
     override def apply(): ClusterDivision = {
@@ -44,13 +56,43 @@ trait ClusteringDefinition {
   }
 
   /**
-   *
+   * This meta-algorithm allows finding overlapped clusters.
+   * It is divided into two parts:
+   * a) overlapped cluster generation: the principal part of the algorithm. The cluster formation follows the abstract meta-algorithm
+   *  idea (see ClusteringAbstraction for more details) :
+   *  1. candidate selection phase (candidate)
+   *  2. centre input expansion (expand) following an in-out condition (condition)
+   *  3. centre data gather (collect)
+   *  4. centre cluster information evaluation (finalization) and share
+   *  However, here we use Aggregate Processes. Hence, in this case, the "bubbles" could have intersections.
+   * b) clusters cleaning: the clusters produced in the phases above should need to be cleaned, in particular:
+   *  1. some clusters do not meet the initial condition and should be erased (watchdog phase)
+   *  2. some clusters have the same shape, therefore we can merge them (union phase)
    */
   trait Overlap extends ClusteringCommon {
     self: Clustering =>
+
+    /**
+     * 
+     * @param inputData
+     * @param toKill
+     * @tparam D
+     */
     case class OverlapProcessInput[D](inputData: D, toKill: Set[Key])
 
+    /**
+     * 
+     * @param reference
+     * @param zoneClusters
+     * @return
+     */
     def mergePolicy(reference: Key, zoneClusters: Cluster): (Key, ClusterData)
+
+    /**
+     * 
+     * @param division
+     * @return
+     */
     def watchDog(division: ClusterDivision): Set[Key]
     /*
       ALGORITHM DESCRIPTION:
@@ -63,7 +105,9 @@ trait ClusteringDefinition {
         (watchDog(unionClusters), unionClusters)
       }._2
     }
+    /*
 
+     */
     private def findClusters(toKill: Set[Key]): Cluster = {
       val processLogic: Key => OverlapProcessInput[Input] => POut[Option[ClusterData]] = { key =>
         { case OverlapProcessInput(input, toKill) =>
@@ -90,7 +134,8 @@ trait ClusteringDefinition {
       val processOutput = sspawn2(processLogic, clusterKey, OverlapProcessInput(input, toKill))
       processOutput.collect { case (k, Some(v)) => k -> v }
     }
-
+    /*
+     */
     private def clusterUnion(toKill: Set[Key], localCluster: Cluster): ClusterDivision = {
       val unionLogic: Key => OverlapProcessInput[Cluster] => POut[Option[(Key, ClusterData)]] = { key =>
         { case OverlapProcessInput(input, toKill) =>
