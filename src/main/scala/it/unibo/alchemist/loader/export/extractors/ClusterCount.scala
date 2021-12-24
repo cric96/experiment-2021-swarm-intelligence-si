@@ -22,8 +22,8 @@ class ClusterCount() extends Extractor[Int] {
     val clusters = extract[Set[Int]](environment, "clusters")
       .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
 
-    val overlapped = extract[Set[ClusteringKey]](environment, "allClusters")
-      .map(elem => elem.map(_.leaderId))
+    val overlapped = extract[Set[Int]](environment, "allClusters")
+      // .map(elem => elem.map(_.leaderId))
       .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
     Map("cluster" -> clusters.size, "all-clusters" -> overlapped.size).asJava
   }

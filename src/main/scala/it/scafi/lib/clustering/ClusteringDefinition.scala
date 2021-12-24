@@ -43,13 +43,19 @@ trait ClusteringDefinition {
     }
   }
 
+  /**
+   *
+   */
   trait Overlap extends ClusteringCommon {
     self: Clustering =>
     case class OverlapProcessInput[D](inputData: D, toKill: Set[Key])
 
-    def mergePolicy(divisions: Cluster): Cluster
+    def mergePolicy(reference: Key, zoneClusters: Cluster): (Key, ClusterData)
     def watchDog(division: ClusterDivision): Set[Key]
+    /*
+      ALGORITHM DESCRIPTION:
 
+     */
     override def apply(): ClusterDivision = {
       rep((Set.empty[Key], emptyClusterDivision)) { case (toKill, _) =>
         val clusters = findClusters(toKill)
@@ -86,31 +92,27 @@ trait ClusteringDefinition {
     }
 
     private def clusterUnion(toKill: Set[Key], localCluster: Cluster): ClusterDivision = {
-      val unionLogic: Key => OverlapProcessInput[Cluster] => POut[ClusterDivision] = { key =>
+      val unionLogic: Key => OverlapProcessInput[Cluster] => POut[Option[(Key, ClusterData)]] = { key =>
         { case OverlapProcessInput(input, toKill) =>
           val processOwner = key == keyFactory
           mux(toKill.contains(key)) {
-            POut(emptyClusterDivision, SpawnInterface.Terminated)
+            POut(Option.empty[(Key, ClusterData)], SpawnInterface.Terminated)
           } {
             branch(localCluster.keySet.contains(key)) {
               val potential = classicGradient(processOwner, metric)
               val allInformation = C[Double, Cluster](potential, _ ++ _, input, emptyCluster)
-              val clusterDivision = ClusterDivision(allInformation, mergePolicy(allInformation))
-              val result = broadcast(processOwner, clusterDivision)
-              POut(result, SpawnInterface.Output)
+              val shareDecision = mux(processOwner) { mergePolicy(key, allInformation) } { key -> localCluster(key) }
+              POut(Option(broadcast(processOwner, shareDecision)), SpawnInterface.Output)
             } {
-              POut(emptyClusterDivision, SpawnInterface.External)
+              POut(Option.empty[(Key, ClusterData)], SpawnInterface.External)
             }
           }
         }
       }
       val keys = localCluster.keySet
-      val clusterMerged = sspawn2(unionLogic, keys, OverlapProcessInput(localCluster, toKill))
-      val foldResult = clusterMerged.values
-        .foldLeft(emptyClusterDivision) { case (acc, data) =>
-          ClusterDivision(acc.all ++ data.all, acc.merged ++ data.merged)
-        }
-      foldResult
+      val mergeProcessResult = sspawn2(unionLogic, keys, OverlapProcessInput(localCluster, toKill))
+      val clusterMerged = mergeProcessResult.values.collect { case Some((key, data)) => (key, data) }.toMap
+      ClusterDivision(localCluster, clusterMerged)
     }
   }
 }

@@ -100,19 +100,20 @@ trait ClusteringBuilder {
   case class DisjointSelection[K, I, D, C](private val context: ClusterContext[K, I, D, C]) {
     def disjoint: Clustering.Aux[K, I, D, C] with Disjoint = new ClusteringFromContext[K, I, D, C](context)
       with Disjoint
-    def overlap: Clustering.Aux[K, I, D, C] = new OverlapClusteringProgram(context, id => id, _ => Set.empty)
+    def overlap: Clustering.Aux[K, I, D, C] =
+      new OverlapClusteringProgram(context, (k, cluster) => k -> cluster(k), _ => Set.empty)
     def watchDog(logic: Clustering.ClusteringDivision[K, C] => Set[K]): OverlapFinalizer[K, I, D, C] = OverlapFinalizer(
       context,
-      a => a,
+      (k, cluster) => k -> cluster(k),
       division => logic(division)
     )
-    def merge(logic: Clustering.Cluster[K, C] => Clustering.Cluster[K, C]): WatchDogSelection[K, I, D, C] =
+    def merge(logic: (K, Clustering.Cluster[K, C]) => (K, C)): WatchDogSelection[K, I, D, C] =
       WatchDogSelection(context, logic)
   }
 
   case class WatchDogSelection[K, I, D, C](
     private val context: ClusterContext[K, I, D, C],
-    private val merge: Clustering.Cluster[K, C] => Clustering.Cluster[K, C]
+    private val merge: (K, Clustering.Cluster[K, C]) => (K, C)
   ) {
     def watchDog(logic: Clustering.ClusteringDivision[K, C] => Set[K]): OverlapFinalizer[K, I, D, C] = OverlapFinalizer(
       context,
@@ -123,7 +124,7 @@ trait ClusteringBuilder {
 
   case class OverlapFinalizer[K, I, D, C](
     private val context: ClusterContext[K, I, D, C],
-    private val merge: Clustering.Cluster[K, C] => Clustering.Cluster[K, C],
+    private val merge: (K, Clustering.Cluster[K, C]) => (K, C),
     private val watchDogLogic: Clustering.ClusteringDivision[K, C] => Set[K]
   ) {
     def overlap: Clustering.Aux[K, I, D, C] = new OverlapClusteringProgram(context, merge, watchDogLogic)
@@ -131,12 +132,13 @@ trait ClusteringBuilder {
 
   private class OverlapClusteringProgram[K, I, D, C](
     context: ClusterContext[K, I, D, C],
-    merge: Clustering.Cluster[K, C] => Clustering.Cluster[K, C],
+    merge: (K, Clustering.Cluster[K, C]) => (K, C),
     watchDogLogic: Clustering.ClusteringDivision[K, C] => Set[K]
   ) extends ClusteringFromContext[K, I, D, C](context)
       with Overlap {
-    override def mergePolicy(divisions: Cluster): Cluster = merge(divisions)
 
     override def watchDog(division: ClusterDivision): Set[K] = watchDogLogic(division)
+
+    override def mergePolicy(reference: K, zoneClusters: Cluster): (K, C) = merge(reference, zoneClusters)
   }
 }

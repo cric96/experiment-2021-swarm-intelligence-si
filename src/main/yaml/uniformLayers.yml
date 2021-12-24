@@ -15,7 +15,7 @@ variables:
     parameters: [ 1.0, [ 0.5, 1.0, 1.5 ] ]
   same_cluster_thr: &same_cluster_thr
     type: ArbitraryVariable
-    parameters: [ 0.1, [ 0.1, 0.5, 1.0 ] ]
+    parameters: [ 0.3, [ 0.1, 0.3, 0.7 ] ]
   candidate_in_hysteresis: &candidate_in_hysteresis
     type: ArbitraryVariable
     parameters: [ 3, [ 3, 5, 7 ] ]

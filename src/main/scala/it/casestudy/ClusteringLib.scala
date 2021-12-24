@@ -53,7 +53,7 @@ trait ClusteringLib {
         val processes =
           sspawn2[K, OverlapProcessInput[I], Option[O]](spawnLogic, clusterKey, OverlapProcessInput(input, toKill))
         val clustersFound = processes.collect { case (k, Some(v)) => k -> v }
-        node.put("allClusters", clustersFound.keySet)
+        // node.put("allClusters", clustersFound.keySet)
         /*val merged = // todo move out of there
           sspawn2[K, OverlapProcessInput[Cluster[K, O]], Cluster[K, O]](
             mergeLogic,

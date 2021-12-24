@@ -25,7 +25,7 @@ class ClusteringV2
   implicit val precision: Precision = Precision(0.000001)
   // Alchemist environment variables
   private lazy val threshold = node.get[Double]("inClusterThr")
-  private lazy val sameClusterThr = 0.01 // node.get[Double]("sameClusterThr")
+  private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
   private lazy val waitingTime = node.get[Int]("waitingTime")
   // Constants
   private val maxFollowDirectionTime = 100
@@ -52,8 +52,8 @@ class ClusteringV2
         ClusterInformation(minPoint, maxPoint, average)
       })
       .candidate(candidate)
-      .inIff { (key, input) => inCluster(temperature, key.startingTemperature, threshold) }
-      .merge(clusters => mergeCluster(clusters))
+      .inIff { (key, _) => inCluster(temperature, key.startingTemperature, threshold) }
+      .merge((key, clusters) => mergeCluster(key, clusters))
       .watchDog { clusters => watchDog(clusters.merged, candidate) }
       .overlap()
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
@@ -61,7 +61,7 @@ class ClusteringV2
     node.put(Molecules.candidate, candidate)
     node.put(Molecules.clusters, clusters.merged.keySet.map(_.leaderId))
     // println(clusters.all.keySet.map(_.leaderId))
-    // node.put("allClusters", clusters.all.keySet.map(_.leaderId))
+    node.put("allClusters", clusters.all.keySet.map(_.leaderId))
     movementLogic(clusters.merged)
     candidate
   }
@@ -126,21 +126,12 @@ class ClusteringV2
    * In this case I used the distance from the centroid.
    * */
   def mergeCluster(
+    reference: ClusteringKey,
     clusterInfo: Map[ClusteringKey, ClusterInformation[Double]]
-  ): Map[ClusteringKey, ClusterInformation[Double]] = {
-    clusterInfo
-      .foldLeft(Map.empty[ClusteringKey, ClusterInformation[Double]]) { case (acc, (clusteringKey, data)) =>
-        val sameCluster = acc.filter { case (_, currentData) =>
-          isSameCluster(currentData, data)
-        }
-        // breaks symmetry
-        val toRemove = sameCluster.filter { case (currentClusterKey, _) =>
-          currentClusterKey.leaderId > clusteringKey.leaderId
-        }
-        if (toRemove.nonEmpty || toRemove.isEmpty && acc.isEmpty) { (acc -- toRemove.keys) + (clusteringKey -> data) }
-        else if (sameCluster.nonEmpty) { acc }
-        else { acc + (clusteringKey -> data) }
-      }
+  ): (ClusteringKey, ClusterInformation[Double]) = {
+    val referenceData = clusterInfo(reference)
+    val sameClusters = clusterInfo.filter { case (_, currentData) => isSameCluster(currentData, referenceData) }
+    sameClusters.minBy(_._1.leaderId)
   }
 
   /**
