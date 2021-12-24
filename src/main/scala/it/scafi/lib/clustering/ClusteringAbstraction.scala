@@ -24,7 +24,7 @@ trait ClusteringAbstraction {
     def inCondition(key: Key, data: Input): Boolean
     def apply(): ClusterDivision
 
-    def emptyClusterDivision: ClusterDivision = ClusterDivision(emptyCluster, emptyCluster)
+    protected[clustering] def emptyClusterDivision: ClusterDivision = ClusterDivision(emptyCluster, emptyCluster)
     protected def emptyCluster: Cluster = Map.empty[Key, ClusterData]
     protected def createCluster(clusterKey: Key, clusterData: ClusterData): ClusterDivision = {
       val clusters = Map(clusterKey -> clusterData)
