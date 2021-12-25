@@ -13,6 +13,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Mapper used by Isoline and GaussianEffect to draw a Gaussian Layer
+ */
 public class NegativeGaussianMapper implements LayerToFunctionMapper {
     Boolean maxMinToSet = true;
     @Override
@@ -23,6 +26,7 @@ public class NegativeGaussianMapper implements LayerToFunctionMapper {
             @NotNull Wormhole2D<P> wormhole
     ) {
         if(maxMinToSet) {
+            /*  find the minimum value among the Gaussian layers */
             final double minValue = toDraw.stream()
                     .filter(l -> l instanceof BidimensionalGaussianLayer)
                     .map(l -> (BidimensionalGaussianLayer<P>)(l))

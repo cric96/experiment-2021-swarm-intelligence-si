@@ -16,10 +16,18 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * An extractor used to count the number of node that belongs to some cluster.
+ * This extractor works only for Gaussian layers
+ */
 public class ClusterEvaluation implements Extractor<Double> {
     private final Double thr;
     private final List<String> columns;
 
+    /**
+     * @param thr used to define if a node is inside or outside a cluster (i.e. Gaussian Layer)
+     * @param names the names of clusters exported in the CSV file
+     */
     public ClusterEvaluation(Double thr, String... names) {
         this.columns = Arrays.asList(names);
         this.thr = thr;
@@ -34,24 +42,19 @@ public class ClusterEvaluation implements Extractor<Double> {
     @Override
     public <T> Map<String, Double> extractData(@NotNull Environment<T, ?> environment, @Nullable Reaction<T> reaction, @NotNull Time time, long l) {
         final Environment<T, Position2D<?>> unsafeEnv = (Environment<T, Position2D<?>>) environment;
-        var layers = columns
-                .stream()
-                .map(SimpleMolecule::new)
-                .map(unsafeEnv::getLayer)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(layer -> layer instanceof BidimensionalGaussianLayer)
-                .collect(Collectors.toList());
-
+        // Find all gaussian layers
+        var layers = ClusterUtil.getGaussian(unsafeEnv, columns);
+        // For each layers, count how many node belongs to it
         var countsNodeForLayers = layers.stream().map(layer ->
                 unsafeEnv.getNodes()
                         .stream()
                         .map(node -> Map.entry(node, unsafeEnv.getPosition(node)))
                         .map(node -> Map.entry(node.getKey(), (Double) layer.getValue(node.getValue())))
-                        .filter(node -> Math.abs(node.getValue()) > thr && hasCluster(node.getKey()))
+                        .filter(node -> Math.abs(node.getValue()) > thr && ClusterUtil.hasCluster(node.getKey()))
                         .mapToDouble(Map.Entry::getValue)
                         .count()
                 ).collect(Collectors.toList());
+        // Map each name to the node layer count
         return IntStream
                 .range(0, columns.size())
                 .mapToObj(i -> {
@@ -62,14 +65,5 @@ public class ClusterEvaluation implements Extractor<Double> {
                     }
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().doubleValue()));
-    }
-    private Boolean hasCluster(Node<?> node) {
-        var manager = new SimpleNodeManager<>(node);
-        if(manager.has("clusters")) {
-            var clusters = (scala.collection.Set<scala.Int>) manager.get("clusters");
-            return clusters.nonEmpty();
-        } {
-            return false;
-        }
     }
 }

@@ -8,6 +8,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+/**
+ * A layer used to assign a value to a possibly non-convex zone delimited by a sequence of points
+ * @param <P> the Position type of the environment
+ */
 public class NonConvexLayer<P extends Position2D<P>> implements Layer<Double, P> {
     private final Polygon polygon;
     private final Double baseline;

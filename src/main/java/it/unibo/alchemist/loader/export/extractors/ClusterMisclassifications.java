@@ -13,10 +13,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * An extractor that evaluates how many node are misclassified, namely they are marked to belong to a cluster
+ * but they are far to a GaussianLayers
+ */
 public class ClusterMisclassifications implements Extractor<Long> {
     private final Double thr;
     private final List<String> columns;
 
+    /**
+     * @param thr used to define if a node is inside or outside a cluster (i.e. Gaussian Layer)
+     * @param names the names of clusters exported in the CSV file
+     */
     public ClusterMisclassifications(Double thr, String... names) {
         this.columns = Arrays.asList(names);
         this.thr = thr;
@@ -34,31 +42,17 @@ public class ClusterMisclassifications implements Extractor<Long> {
             return Map.of("errors", 0L);
         }
         final Environment<T, Position2D<?>> unsafeEnv = (Environment<T, Position2D<?>>) environment;
-        var layers = columns
-                .stream()
-                .map(SimpleMolecule::new)
-                .map(unsafeEnv::getLayer)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(layer -> layer instanceof BidimensionalGaussianLayer)
-                .collect(Collectors.toList());
-
+        // Extract all gaussian layers
+        var layers = ClusterUtil.getGaussian(unsafeEnv, columns);
+        // Verify, for each node, it they are misclassified => node has a cluster but no guassian layer is near to them.
         var wrongNodes = unsafeEnv.getNodes().stream()
                 .map(node -> Map.entry(node, unsafeEnv.getPosition(node)))
                 .filter(node -> layers.stream()
                         .map(layer -> Map.entry(node.getKey(), (Double) layer.getValue(node.getValue())))
-                        .allMatch(nodeAndValue -> hasCluster(nodeAndValue.getKey()) && Math.abs(nodeAndValue.getValue()) < thr))
+                        .allMatch(nodeAndValue -> ClusterUtil.hasCluster(nodeAndValue.getKey())
+                                && Math.abs(nodeAndValue.getValue()) < thr))
                 .count();
 
         return Map.of("errors", wrongNodes);
-    }
-    private Boolean hasCluster(Node<?> node) {
-        var manager = new SimpleNodeManager<>(node);
-        if(manager.has("clusters")) {
-            var clusters = (scala.collection.Set<scala.Int>) manager.get("clusters");
-            return clusters.nonEmpty();
-        } {
-            return false;
-        }
     }
 }
