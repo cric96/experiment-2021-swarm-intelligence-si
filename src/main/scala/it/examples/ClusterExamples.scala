@@ -7,6 +7,12 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist.{ScafiAlchemi
 /* This file contains two example of Clustering API usage.
  *   a) clustering based on a perceived value (temperature)
  *   b) clustering based on the node number
+ * to run these examples type:
+ *
+ * ./gradlew runTestDisjointClusterGraphic
+ * ./gradlew runTestOverlapClusterGraphic
+ * ./gradlew runTestClusterOnNumberGraphic
+ *
  * */
 
 trait Libs
