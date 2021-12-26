@@ -2,7 +2,7 @@ incarnation: scafi
 
 variables:
   seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
-  simulation_length: &simulation_length { formula: 100.0 }
+  simulation_length: &simulation_length { formula: 150.0 }
   density: &density
     type: ArbitraryVariable
     parameters: [ 0.5, [ 0.5, 0.75 ] ]

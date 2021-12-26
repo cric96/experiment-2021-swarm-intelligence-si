@@ -63,7 +63,7 @@ class TemperatureOverlapBased extends Libs {
       .withoutDataGathering
       .candidate(clusterStarter)
       .inIff((_, leaderTemp) => Math.abs(leaderTemp - temperature) <= thr)
-      .watchDog(_ => mux(!clusterStarter) { Set(mid()) } { Set.empty })
+      .watchDog { mux(!clusterStarter) { Set(mid()) } { Set.empty } }
       .overlap()
 
     node.put("candidate", clusterStarter)
@@ -90,7 +90,7 @@ class ClusterBasedOnNumber extends Libs {
     val initialRange = 0.0
     val delta = 0.01
     val howMany = 10
-    val clusters = rep(emptyClustering[ID, Int]) { division =>
+    val clusters = rep(emptyClusterDivision[ID, Int]) { division =>
       {
         cluster
           .input {

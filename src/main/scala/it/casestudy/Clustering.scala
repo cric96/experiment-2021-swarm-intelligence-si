@@ -39,24 +39,25 @@ class Clustering
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
       false
     }
-    val clusters = cluster
-      .input { ClusteringProcessInput(temperature, threshold, candidate) }
-      .key { ClusteringKey(mid())(temperature, timestamp()) }
-      .shareInput
-      .localInformation(Map(mid() -> ClusterData(currentPosition(), temperature)))
-      .collect(_ ++ _)
-      .finalize(data => {
-        val minPoint = data.values.min
-        val maxPoint = data.values.max
-        val average = data.values.reduce(_ + _) / data.values.size
-        ClusterInformation(minPoint, maxPoint, average)
-      })
-      .candidate(candidate)
-      .inIff { (key, _) => inCluster(temperature, key.startingTemperature, threshold) }
-      .merge((key, clusters) => mergeCluster(key, clusters))
-      .watchDog { clusters => watchDog(clusters.merged, candidate) }
-      .overlap()
-    // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
+    val clusters = rep(emptyClusterDivision[ClusteringKey, ClusterInformation[Double]]) { feedbackResult =>
+      cluster
+        .input { ClusteringProcessInput(temperature, threshold, candidate) }
+        .key { ClusteringKey(mid())(temperature) }
+        .shareInput
+        .localInformation(Map(mid() -> SpatialData(currentPosition(), temperature)))
+        .collect(_ ++ _)
+        .finalize(data => {
+          val minPoint = data.values.min
+          val maxPoint = data.values.max
+          val average = data.values.reduce(_ + _) / data.values.size
+          ClusterInformation(minPoint, maxPoint, average)
+        })
+        .candidate(candidate)
+        .inIff { (key, input) => inCluster(temperature, input.temperaturePerceived, threshold) }
+        .merge((key, clusters) => mergeCluster(key, clusters))
+        .watchDog { watchDog(feedbackResult.merged, candidate) }
+        .overlap()
+    }
     node.put(Molecules.temperaturePerceived, temperature)
     node.put(Molecules.candidate, candidate)
     node.put(Molecules.clusters, clusters.merged.keySet.map(_.leaderId))
@@ -91,16 +92,6 @@ class Clustering
   }
 
   /**
-   * check what processes need to be killed
-   * @param processes the process perceived from a node
-   * @return the set of processes that will be killed
-   */
-  def watchDog(processes: Map[ClusteringKey, ClusterInformation[Double]], candidate: Boolean): Set[ClusteringKey] = {
-    val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
-    processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
-  }
-
-  /**
    * extract cluster information from a given potential field
    * @param potential the distance (hop count) from the central cluster
    * @param temperature the local temperature
@@ -108,10 +99,10 @@ class Clustering
    */
   def evaluateClusterInformation(potential: Int, temperature: Double): ClusterInformation[Double] = {
     val data = {
-      C[Int, Map[ID, ClusterData[Double]]](
+      C[Int, Map[ID, SpatialData[Double]]](
         potential,
         _ ++ _,
-        Map(mid() -> ClusterData(currentPosition(), temperature)),
+        Map(mid() -> SpatialData(currentPosition(), temperature)),
         Map.empty
       )
     }
@@ -119,19 +110,6 @@ class Clustering
     val maxPoint = data.values.max
     val average = data.values.reduce(_ + _) / data.values.size
     ClusterInformation(minPoint, maxPoint, average)
-  }
-
-  /** 
-   * Merge policy: define if two (or more) clusters are the same.
-   * In this case I used the distance from the centroid.
-   * */
-  def mergeCluster(
-    reference: ClusteringKey,
-    clusterInfo: Map[ClusteringKey, ClusterInformation[Double]]
-  ): (ClusteringKey, ClusterInformation[Double]) = {
-    val referenceData = clusterInfo(reference)
-    val sameClusters = clusterInfo.filter { case (_, currentData) => isSameCluster(currentData, referenceData) }
-    sameClusters.minBy(_._1.leaderId)
   }
 
   /**
@@ -147,10 +125,31 @@ class Clustering
     difference >= 0.0 && difference <= threshold
   }
 
+  /**
+   * Merge policy: define if two (or more) clusters are the same.
+   * In this case I used the distance from the centroid.
+   * */
+  def mergeCluster(
+    reference: ClusteringKey,
+    clusterInfo: Map[ClusteringKey, ClusterInformation[Double]]
+  ): (ClusteringKey, ClusterInformation[Double]) = {
+    val referenceData = clusterInfo(reference)
+    val sameClusters = clusterInfo.filter { case (_, currentData) => isSameCluster(currentData, referenceData) }
+    sameClusters.minBy(_._1.leaderId)
+  }
+
   def isSameCluster[V](reference: ClusterInformation[V], other: ClusterInformation[V]): Boolean = {
     reference.centroid.distance(other.centroid) +- sameClusterThr
-    // (reference.minPoint.distance(other.minPoint)) +- sameClusterThr ||
-    // (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
+  }
+
+  /**
+   * check what processes need to be killed
+   * @param processes the process perceived from a node
+   * @return the set of processes that will be killed
+   */
+  def watchDog(processes: Map[ClusteringKey, ClusterInformation[Double]], candidate: Boolean): Set[ClusteringKey] = {
+    val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
+    processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
   }
 
   def movementLogic(clusters: Clustering.Cluster[ClusteringKey, ClusterInformation[Double]]): Unit = {
@@ -163,7 +162,7 @@ class Clustering
 }
 
 object Clustering {
-  case class ClusteringKey(leaderId: ID)(val startingTemperature: Double, val timestamp: Long)
+  case class ClusteringKey(leaderId: ID)(val startingTemperature: Double)
   case class ClusteringProcessOutput(
     hopCountDistance: Int,
     leaderTemperature: Double,
@@ -172,8 +171,12 @@ object Clustering {
   case class ClusteringProcessInput(
     temperaturePerceived: Double,
     threshold: Double,
-    wasCandidate: Boolean = false,
-    clusterToKill: Set[ClusteringKey] = Set.empty
+    wasCandidate: Boolean = false
+  )
+  case class ClusterInformation[V: Numeric](
+    minPoint: SpatialData[V],
+    maxPoint: SpatialData[V],
+    centroid: SpatialData[V]
   )
 
   object Molecules {
