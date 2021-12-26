@@ -1,8 +1,6 @@
 package it.unibo.alchemist.loader.`export`.extractors
 
-import it.casestudy.Clustering.ClusteringKey
 import it.unibo.alchemist.loader.`export`.Extractor
-import it.unibo.alchemist.loader.variables.ArbitraryVariable
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces
 import it.unibo.alchemist.model.interfaces.{Environment, Reaction}
@@ -10,7 +8,10 @@ import it.unibo.alchemist.model.interfaces.{Environment, Reaction}
 import java.util
 import scala.jdk.CollectionConverters.{IteratorHasAsScala, MapHasAsJava}
 
-class ClusterCount() extends Extractor[Int] {
+/**
+ * Extractor that evaluates the cluster count found by the algorithm
+ */
+class ClusterCount extends Extractor[Int] {
   override def getColumnNames: util.List[String] = util.Arrays.asList("clusters", "all-clusters")
 
   override def extractData[T](
@@ -23,7 +24,6 @@ class ClusterCount() extends Extractor[Int] {
       .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
 
     val overlapped = extract[Set[Int]](environment, "allClusters")
-      // .map(elem => elem.map(_.leaderId))
       .foldLeft(Set.empty[Int])((acc, data) => acc ++ data)
     Map("cluster" -> clusters.size, "all-clusters" -> overlapped.size).asJava
   }

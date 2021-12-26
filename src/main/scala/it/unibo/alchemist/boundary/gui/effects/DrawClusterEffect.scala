@@ -9,6 +9,7 @@ import scalacache.modes.sync._
 
 import java.awt.geom.{AffineTransform, Rectangle2D}
 import java.awt.{Color, Graphics2D, LinearGradientPaint, Paint, Point, Shape}
+
 class DrawClusterEffect extends Effect {
   var totalAgentNumber = 0
   override def apply[T, P <: Position2D[P]](
@@ -36,10 +37,6 @@ class DrawClusterEffect extends Effect {
   }
 
   override def getColorSummary: Color = Color.BLACK
-
-  private def updateAgentNumber(env: Environment[_, _]): Unit = {
-    totalAgentNumber = env.getNodes.size()
-  }
 
   private def getPaintFrom(node: SimpleNodeManager[_], shape: Shape): Paint = {
     val clusters = if (node.has("clusters")) { node.get[Set[Int]]("clusters") }
@@ -83,6 +80,10 @@ class DrawClusterEffect extends Effect {
     transform.translate(x, y)
     transform.scale(zoom, zoom)
     transform
+  }
+
+  private def updateAgentNumber(env: Environment[_, _]): Unit = {
+    totalAgentNumber = env.getNodes.size()
   }
 }
 

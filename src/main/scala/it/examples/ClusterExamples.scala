@@ -4,6 +4,11 @@ import it.scafi.lib.clustering.ClusteringLib
 import it.scafi.{ProcessFix, SenseLayers}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist.{ScafiAlchemistSupport, _}
 
+/* This file contains two example of Clustering API usage.
+ *   a) clustering based on a perceived value (temperature)
+ *   b) clustering based on the node number
+ * */
+
 trait Libs
     extends AggregateProgram
     with SenseLayers

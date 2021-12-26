@@ -46,9 +46,6 @@ trait MovementUtils {
 
   private def randomCoordZone(zone: Zone): Point2D = zone match {
     case CircularZone((cx, cy), radius) =>
-      // val randomRadius = radius * nextRandom()
-      // val theta = nextRandom() * 2 * math.Pi
-      // Point2D(cx + randomRadius * math.cos(theta), cy + randomRadius * math.sin(theta))
       Point2D(cx + radius * positiveNegativeRandom(), cy + radius * positiveNegativeRandom())
 
     case RectangularZone((rx, ry), w, h) =>

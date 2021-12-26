@@ -10,7 +10,12 @@ import it.unibo.alchemist.model.interfaces.{Environment, Position, Reaction}
 import java.util
 import scala.collection.compat.immutable.ArraySeq
 import scala.jdk.CollectionConverters.{IteratorHasAsScala, MapHasAsJava}
+import scala.language.existentials
 
+/**
+ * extractor used to evaluated Dunn index and silhouette of cluster founded by the algorithm.
+ * We consider each point as a Tuple: (x, y, temperature)
+ */
 class ClusterMetrics extends Extractor[Double] {
   type Clusters = Map[Int, List[Vector[Double]]]
 
@@ -26,7 +31,7 @@ class ClusterMetrics extends Extractor[Double] {
     val unsafeEnv = environment.asInstanceOf[Environment[T, P forSome { type P <: Position[P] }]]
     val clusters = nodesList
       .map(node => (node, new SimpleNodeManager(node)))
-      .filter { case (node, manager) => manager.has("clusters") }
+      .filter { case (_, manager) => manager.has("clusters") }
       .map { case (node, manager) => (node, manager, manager.get[Set[Int]]("clusters")) }
       .flatMap { case (node, manager, clusters) => clusters.map(id => (id, node, manager)) }
       .groupBy { case (id, _, _) => id }
@@ -34,7 +39,6 @@ class ClusterMetrics extends Extractor[Double] {
         id -> elements.map { case (_, node, manager) =>
           val point = unsafeEnv.getPosition(node)
           val data = point.getCoordinates :+ manager.get[Double]("temperaturePerceived")
-
           linalg.Vector.apply[Double](ArraySeq.unsafeWrapArray(data): _*)
         }
       }
@@ -43,7 +47,7 @@ class ClusterMetrics extends Extractor[Double] {
   }
 
   // from https://en.wikipedia.org/wiki/Silhouette_(clustering)
-  def silhouette(clusters: Clusters): Double = zeroIfEmptyOrElse(clusters) {
+  def silhouette(clusters: Clusters): Double = negativeValueIfEmptyOrElse(clusters) {
     def internal(target: Vector[Double], samples: List[Vector[Double]]): Double = {
       val distances = samples.map(sample => Math.sqrt(linalg.squaredDistance(target, sample)))
       distances.sum / distances.size
@@ -65,7 +69,7 @@ class ClusterMetrics extends Extractor[Double] {
   }
 
   // from http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1041.6282&rep=rep1&type=pdf
-  def dunnIndex(clusters: Clusters): Double = zeroIfEmptyOrElse(clusters) {
+  def dunnIndex(clusters: Clusters): Double = negativeValueIfEmptyOrElse(clusters) {
     val defaultDenominator = 0.0
     val defaultNumerator = 0.0
     val centroids = clusters.map { case (id, values) =>
@@ -91,9 +95,9 @@ class ClusterMetrics extends Extractor[Double] {
     centroidDistances.minOption.getOrElse(defaultNumerator) / maxDistances.maxOption.getOrElse(defaultDenominator)
   }
 
-  def zeroIfEmptyOrElse(cluster: Clusters)(logic: => Double): Double = if (cluster.nonEmpty) {
+  def negativeValueIfEmptyOrElse(cluster: Clusters)(logic: => Double): Double = if (cluster.nonEmpty) {
     logic
   } else {
-    Double.NaN
+    -1
   }
 }
