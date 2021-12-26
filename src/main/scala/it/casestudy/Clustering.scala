@@ -1,5 +1,8 @@
 package it.casestudy
+
 import it.casestudy.Clustering._
+import it.scafi.lib.clustering.ClusteringLib
+
 import it.scafi.{MovementUtils, ProcessFix}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
@@ -36,35 +39,30 @@ class Clustering
     val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
       false
     }
-    val merged = cluster
+    val clusters = cluster
       .input { ClusteringProcessInput(temperature, threshold, candidate) }
-      .keyGenerator { ClusteringKey(mid())(temperature, timestamp()) }
-      .process(key =>
-        input => {
-          val isLeader = mid() == key.leaderId
-          val distanceFromLeader = classicGradient(isLeader, () => 1).toInt
-          val centralTemperature = mux(isLeader) { input.temperaturePerceived } { Double.NegativeInfinity }
-          val broadcastLeaderTemperature = broadcast(isLeader, centralTemperature)
-          val clusterInformation =
-            broadcast(mid() == key.leaderId, evaluateClusterInformation(distanceFromLeader, broadcastLeaderTemperature))
-          ClusteringProcessOutput(distanceFromLeader, broadcastLeaderTemperature, clusterInformation)
-        }
-      )
-      .insideIf { key => input => _ =>
-        inCluster(input.temperaturePerceived, key.startingTemperature, input.threshold)
-      }
-      // .candidateCondition { candidate }
-      .candidateWithFeedback { cluster =>
-        (candidate && cluster.isEmpty) || (candidate && cluster.nonEmpty && cluster.keySet.exists(_.leaderId == mid()))
-      }
-      .mergeWhen(clusters => mergeCluster(clusters))
-      .killWhen(clusters => watchDog(clusters, candidate))
+      .key { ClusteringKey(mid())(temperature, timestamp()) }
+      .shareInput
+      .localInformation(Map(mid() -> ClusterData(currentPosition(), temperature)))
+      .collect(_ ++ _)
+      .finalize(data => {
+        val minPoint = data.values.min
+        val maxPoint = data.values.max
+        val average = data.values.reduce(_ + _) / data.values.size
+        ClusterInformation(minPoint, maxPoint, average)
+      })
+      .candidate(candidate)
+      .inIff { (key, _) => inCluster(temperature, key.startingTemperature, threshold) }
+      .merge((key, clusters) => mergeCluster(key, clusters))
+      .watchDog { clusters => watchDog(clusters.merged, candidate) }
       .overlap()
     // val coldestCluster = disjointedClusters(candidate, temperature, threshold)
     node.put(Molecules.temperaturePerceived, temperature)
     node.put(Molecules.candidate, candidate)
-    node.put(Molecules.clusters, merged.keySet.map(_.leaderId))
-    movementLogic(merged)
+    node.put(Molecules.clusters, clusters.merged.keySet.map(_.leaderId))
+    // println(clusters.all.keySet.map(_.leaderId))
+    node.put("allClusters", clusters.all.keySet.map(_.leaderId))
+    movementLogic(clusters.merged)
     candidate
   }
   // fix for sensing layers
@@ -97,7 +95,7 @@ class Clustering
    * @param processes the process perceived from a node
    * @return the set of processes that will be killed
    */
-  def watchDog(processes: Map[ClusteringKey, ClusteringProcessOutput], candidate: Boolean): Set[ClusteringKey] = {
+  def watchDog(processes: Map[ClusteringKey, ClusterInformation[Double]], candidate: Boolean): Set[ClusteringKey] = {
     val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
     processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
   }
@@ -128,21 +126,12 @@ class Clustering
    * In this case I used the distance from the centroid.
    * */
   def mergeCluster(
-    clusterInfo: Map[ClusteringKey, ClusteringProcessOutput]
-  ): Map[ClusteringKey, ClusteringProcessOutput] = {
-    clusterInfo
-      .foldLeft(Map.empty[ClusteringKey, ClusteringProcessOutput]) { case (acc, (clusteringKey, data)) =>
-        val sameCluster = acc.filter { case (_, currentData) =>
-          isSameCluster(currentData.information, data.information)
-        }
-        // breaks symmetry
-        val toRemove = sameCluster.filter { case (currentClusterKey, _) =>
-          currentClusterKey.leaderId > clusteringKey.leaderId
-        }
-        if (toRemove.nonEmpty || toRemove.isEmpty && acc.isEmpty) { (acc -- toRemove.keys) + (clusteringKey -> data) }
-        else if (sameCluster.nonEmpty) { acc }
-        else { acc + (clusteringKey -> data) }
-      }
+    reference: ClusteringKey,
+    clusterInfo: Map[ClusteringKey, ClusterInformation[Double]]
+  ): (ClusteringKey, ClusterInformation[Double]) = {
+    val referenceData = clusterInfo(reference)
+    val sameClusters = clusterInfo.filter { case (_, currentData) => isSameCluster(currentData, referenceData) }
+    sameClusters.minBy(_._1.leaderId)
   }
 
   /**
@@ -164,7 +153,7 @@ class Clustering
     // (reference.maxPoint.distance(other.maxPoint)) +- sameClusterThr
   }
 
-  def movementLogic(clusters: Cluster[ClusteringKey, ClusteringProcessOutput]): Unit = {
+  def movementLogic(clusters: Clustering.Cluster[ClusteringKey, ClusterInformation[Double]]): Unit = {
     if (clusters.keySet.map(_.leaderId).contains(mid())) {
       node.put(Molecules.target, currentPosition())
     } else {
