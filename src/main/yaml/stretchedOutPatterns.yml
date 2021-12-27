@@ -29,7 +29,7 @@ terminate: { type: AfterTime, parameters: [*simulation_length] }
 
 network-model:
   type: ConnectWithinDistance
-  parameters: [*neighbourhood_radius]
+  parameters: [ 1 ]
 
 _gradient: &program
   - time-distribution: 1

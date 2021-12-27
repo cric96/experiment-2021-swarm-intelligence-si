@@ -43,4 +43,4 @@ title_prefix: ''
 excluded_titles:
 line_styles:
   - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
-format: "png"
+format: "pdf"

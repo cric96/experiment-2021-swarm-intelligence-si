@@ -5,7 +5,7 @@ variables:
   simulation_length: &simulation_length { formula: 100.0 }
   density: &density
     type: ArbitraryVariable
-    parameters: [ 0.5, [ 0.5, 0.75 ] ]
+    parameters: [ 0.75, [ 0.5, 0.75 ] ]
   grid_delta: &grid_delta
     formula: 0.25
   neighbourhood_radius: &neighbourhood_radius
@@ -29,7 +29,7 @@ terminate: { type: AfterTime, parameters: [*simulation_length] }
 
 network-model:
   type: ConnectWithinDistance
-  parameters: [*neighbourhood_radius]
+  parameters: [ 1 ]
 
 _gradient: &program
   - time-distribution: 1

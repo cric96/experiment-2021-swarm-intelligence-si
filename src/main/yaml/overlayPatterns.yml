@@ -9,7 +9,7 @@ variables:
   grid_delta: &grid_delta
     formula: 0.25
   neighbourhood_radius: &neighbourhood_radius
-    formula: 'grid_delta + density'
+    formula: 0.75
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
     parameters: [ 1.0, [ 0.5, 1.0, 1.5 ] ]

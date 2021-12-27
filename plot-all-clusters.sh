@@ -8,9 +8,11 @@ python plots/plotter.py plots/metrics.yml data "standardPatterns_seed*" standard
 printf '[\33[01;32m  non convex  \33[01;37m]\n'
 python plots/plotter.py plots/config-two.yml data "nonConvex*" non-convex
 python plots/plotter.py plots/metrics.yml data "nonConvex*" non-convex-metrics
+python plots/plotter.py plots/cluster-node-count.yml data "nonConvex*" nonConvex-count
 printf '[\33[01;32m  one direction  \33[01;37m]\n'
 python plots/plotter.py plots/config-one.yml data "oneDirectionField_seed*" one-direction
 python plots/plotter.py plots/metrics.yml data "oneDirectionField_seed*" one-direction-metrics
+python plots/plotter.py plots/cluster-node-count.yml data "oneDirectionField_seed*" one-direction-count
 printf '[\33[01;32m  one direction with local minimum  \33[01;37m]\n'
 python plots/plotter.py plots/config-one.yml data "oneDirectionFieldLocal*" one-direction-local
 python plots/plotter.py plots/metrics.yml data "oneDirectionFieldLocal*" one-direction-local-metrics

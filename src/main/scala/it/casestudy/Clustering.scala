@@ -84,6 +84,7 @@ class Clustering
      * ( d.m() = d'.m() AND d.id() < d'.id() )
      */
     sameTemperature.size match {
+      case _ if temperatureNeighbourField.size <= 1 => false // I am alone, no process will be spawn
       // ( d.m() = d'.m() AND d.id() < d'.id() )
       case candidates if candidates > 1 => sameTemperature.keys.min == mid()
       // d.m() < d'.m()
