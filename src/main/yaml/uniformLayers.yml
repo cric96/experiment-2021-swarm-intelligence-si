@@ -6,6 +6,8 @@ variables:
   density: &density
     type: ArbitraryVariable
     parameters: [ 0.5, [ 0.5, 0.75 ] ]
+  grid_delta: &grid_delta
+    formula: 0.25
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
     parameters: [ 1.0, [ 1.0] ]
