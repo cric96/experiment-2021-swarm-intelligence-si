@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters.MapHasAsJava
  * Extractor that evaluates the cluster count found by the algorithm
  */
 class ClusterCount extends Extractor[Int] with ClusterExtractorUtility {
-  override def getColumnNames: util.List[String] = util.Arrays.asList("clusters", "all-clusters")
+  override def getColumnNames: util.List[String] = util.Arrays.asList("cluster", "all-clusters")
 
   override def extractData[T](
     environment: Environment[T, _],

@@ -48,8 +48,13 @@ trait MovementUtils {
     case CircularZone((cx, cy), radius) =>
       Point2D(cx + radius * positiveNegativeRandom(), cy + radius * positiveNegativeRandom())
 
-    case RectangularZone((rx, ry), w, h) =>
-      Point2D(rx + (w / 2) * positiveNegativeRandom(), ry + (h / 2) * positiveNegativeRandom())
+    case RectangularZone((cx, cy), w, h) => {
+      val x = nextRandom() * w
+      val y = nextRandom() * h
+      val dx = cx - (w / 2)
+      val dy = cy - (h / 2)
+      Point2D(x + dx, y + dy)
+    }
   }
 
   private def positiveNegativeRandom(): Double = {

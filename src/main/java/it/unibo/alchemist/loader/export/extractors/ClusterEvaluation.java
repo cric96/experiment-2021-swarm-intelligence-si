@@ -4,6 +4,7 @@ import it.unibo.alchemist.loader.export.Extractor;
 import it.unibo.alchemist.model.implementations.layers.BidimensionalGaussianLayer;
 import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule;
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager;
+import it.unibo.alchemist.model.implementations.positions.Euclidean2DPosition;
 import it.unibo.alchemist.model.interfaces.*;
 import it.unibo.alchemist.model.interfaces.Time;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -41,16 +43,18 @@ public class ClusterEvaluation implements Extractor<Double> {
     @NotNull
     @Override
     public <T> Map<String, Double> extractData(@NotNull Environment<T, ?> environment, @Nullable Reaction<T> reaction, @NotNull Time time, long l) {
-        final Environment<T, Position2D<?>> unsafeEnv = (Environment<T, Position2D<?>>) environment;
+        final var unsafeEnv = (Environment<T, Euclidean2DPosition>) environment;
         // Find all gaussian layers
         var layers = ClusterUtil.getGaussian(unsafeEnv, columns);
+
         // For each layers, count how many node belongs to it
-        var countsNodeForLayers = layers.stream().map(layer ->
+        var countsNodeForLayers = layers.stream().map(ClusterUtil.EnrichedLayer::new).map(layer ->
                 unsafeEnv.getNodes()
                         .stream()
                         .map(node -> Map.entry(node, unsafeEnv.getPosition(node)))
-                        .map(node -> Map.entry(node.getKey(), (Double) layer.getValue(node.getValue())))
-                        .filter(node -> Math.abs(node.getValue()) > thr && ClusterUtil.hasCluster(node.getKey()))
+                        .map(node -> Map.entry(node.getKey(), layer.valueAt(node.getValue())))
+                        .filter(node -> Math.abs(node.getValue()) > layer.centerValue(unsafeEnv) - thr
+                                && ClusterUtil.hasCluster(node.getKey()))
                         .mapToDouble(Map.Entry::getValue)
                         .count()
                 ).collect(Collectors.toList());

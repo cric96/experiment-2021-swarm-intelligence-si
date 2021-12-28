@@ -22,6 +22,9 @@ variables:
   speed: &speed
     type: ArbitraryVariable
     parameters: [ 0.0, [ 0.0 ] ]
+  explore_area: &explore_area
+    type: ArbitraryVariable
+    parameters: [ 0.0, [ 0.0 ] ]
 
 seeds: { scenario: *seed, simulation: *seed }
 

@@ -1,15 +1,13 @@
 incarnation: scafi
 
 variables:
-  seed: &seed { min: 0.0, max: 20.0, step: 1.0, default: 0.0 }
+  seed: &seed { min: 0.0, max: 10.0, step: 1.0, default: 0.0 }
   simulation_length: &simulation_length { formula: 100.0 }
   density: &density
     type: ArbitraryVariable
     parameters: [ 0.5, [ 0.5, 0.75 ] ]
   grid_delta: &grid_delta
     formula: 0.25
-  neighbourhood_radius: &neighbourhood_radius
-    formula: 'grid_delta + density'
   in_cluster_thr: &in_cluster_thr
     type: ArbitraryVariable
     parameters: [ 1.0, [ 1.0 ] ]
@@ -20,6 +18,9 @@ variables:
     type: ArbitraryVariable
     parameters: [ 3, [ 3 ] ]
   speed: &speed
+    type: ArbitraryVariable
+    parameters: [ 0.0, [ 0.0 ] ]
+  explore_area: &explore_area
     type: ArbitraryVariable
     parameters: [ 0.0, [ 0.0 ] ]
 

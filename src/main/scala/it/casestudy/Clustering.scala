@@ -24,15 +24,15 @@ class Clustering
   // Context
   implicit val precision: Precision = Precision(0.000001)
   // Alchemist environment variables
-  private lazy val threshold = node.get[Double]("inClusterThr")
-  private lazy val sameClusterThr = node.get[Double]("sameClusterThr")
-  private lazy val waitingTime = node.get[Int]("waitingTime")
+  private lazy val threshold = node.get[Double](Molecules.inClusterThr)
+  private lazy val sameClusterThr = node.get[Double](Molecules.sameClusterThr)
+  private lazy val waitingTime = node.get[Int](Molecules.waitingTime)
+  private lazy val zoneSize = node.get[Double](Molecules.exploreArea)
   // Constants
-  private val maxFollowDirectionTime = 100
-  private val reachTargetThr = 0.01
-  private val zoneSize = 5
-  private val zoneCenter = (0.0, 0.0)
-
+  private val maxFollowDirectionTime = 1000
+  private val reachTargetThr = 0.1
+  private lazy val zoneCenter = (currentPosition().x, currentPosition().y)
+  private lazy val zone = RectangularZone(zoneCenter, zoneSize * 2, zoneSize * 2)
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double](Molecules.temperature)
     // waiting time before starting a process
@@ -70,7 +70,7 @@ class Clustering
   }
 
   def isCandidate(): Boolean = {
-    val temperature: Double = sense[java.lang.Double]("temperature")
+    val temperature: Double = sense[java.lang.Double](Molecules.temperature)
     val temperatureNeighbourField = includingSelf.reifyField(nbr { temperature })
     // find the minimum temperature value within the neighbourhood
     val (minId, minimumTemperature) = temperatureNeighbourField.minBy(_._2)
@@ -155,7 +155,8 @@ class Clustering
     if (clusters.keySet.map(_.leaderId).contains(mid())) {
       node.put(Molecules.target, currentPosition())
     } else {
-      node.put(Molecules.target, explore(CircularZone(zoneCenter, zoneSize), maxFollowDirectionTime, reachTargetThr))
+
+      node.put(Molecules.target, explore(zone, maxFollowDirectionTime, reachTargetThr))
     }
   }
 }
@@ -185,5 +186,9 @@ object Clustering {
     val allClusters = "allClusters"
     val temperaturePerceived = "temperaturePerceived"
     val candidate = "candidate"
+    val inClusterThr = "inClusterThr"
+    val sameClusterThr = "sameClusterThr"
+    val exploreArea = "exploreArea"
+    val waitingTime = "waitingTime"
   }
 }

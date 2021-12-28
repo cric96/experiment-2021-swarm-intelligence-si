@@ -20,8 +20,8 @@ public final class ClusterUtil {
         }
     }
 
-    public static List<Layer<?, Position2D<?>>> getGaussian(
-        final Environment<?, Position2D<?>> env,
+    public static <P extends Position2D<P>> List<BidimensionalGaussianLayer<P>> getGaussian(
+        final Environment<?, P> env,
         final List<String> columns
     ) {
         return columns
@@ -31,6 +31,28 @@ public final class ClusterUtil {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .filter(layer -> layer instanceof BidimensionalGaussianLayer)
+            .map(layer -> (BidimensionalGaussianLayer<P>) layer)
             .collect(Collectors.toList());
+    }
+
+    public static <P extends Position2D<P>> double getCentralValue(
+            BidimensionalGaussianLayer<P> layer,
+            Environment<?, P> env) {
+        var centerX = layer.getCenterX();
+        var centerY = layer.getCenterY();
+        return layer.getValue(env.makePosition(centerX, centerY));
+    }
+
+    public static class EnrichedLayer<P extends Position2D<P>> {
+        private BidimensionalGaussianLayer<P> layer;
+        public EnrichedLayer(BidimensionalGaussianLayer<P> layer) {
+            this.layer = layer;
+        }
+        public double valueAt(P position) {
+            return layer.getValue(position);
+        }
+        public double centerValue(Environment<?, P> env) {
+            return Math.abs(ClusterUtil.getCentralValue(layer, env));
+        }
     }
 }
