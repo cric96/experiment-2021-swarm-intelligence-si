@@ -36,9 +36,7 @@ class Clustering
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double](Molecules.temperature)
     // waiting time before starting a process
-    val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } {
-      false
-    }
+    val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } { false }
     val clusters = rep(emptyClusterDivision[ClusteringKey, ClusterInformation[Double]]) { feedbackResult =>
       cluster
         .input { ClusteringProcessInput(temperature, threshold, candidate) }
@@ -53,7 +51,7 @@ class Clustering
           ClusterInformation(minPoint, maxPoint, average)
         })
         .candidate(candidate)
-        .inIff { (key, input) => inCluster(temperature, input.temperaturePerceived, threshold) }
+        .inIff { (_, input) => inCluster(temperature, input.temperaturePerceived, threshold) }
         .merge((key, clusters) => mergeCluster(key, clusters))
         .watchDog { watchDog(feedbackResult.merged, candidate) }
         .overlap()
@@ -62,7 +60,7 @@ class Clustering
     node.put(Molecules.candidate, candidate)
     node.put(Molecules.clusters, clusters.merged.keySet.map(_.leaderId))
     // println(clusters.all.keySet.map(_.leaderId))
-    node.put("allClusters", clusters.all.keySet.map(_.leaderId))
+    node.put(Molecules.allClusters, clusters.all.keySet.map(_.leaderId))
     movementLogic(clusters.merged)
     candidate
   }
@@ -184,6 +182,7 @@ object Clustering {
     val temperature = "temperature"
     val target = "target"
     val clusters = "clusters"
+    val allClusters = "allClusters"
     val temperaturePerceived = "temperaturePerceived"
     val candidate = "candidate"
   }

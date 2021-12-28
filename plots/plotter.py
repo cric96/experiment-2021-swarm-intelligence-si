@@ -142,9 +142,15 @@ def merge_samples(contents, configs):
 
     # Merge the matrices
     merged = reduce(lambda a, b: a + b, matrices)
-    merged = list([x / nsamples for x in merged])
-    merged.insert(0, time)  # reinserts time
-    res[config] = merged
+    mean = list([x / nsamples for x in merged])
+    std_dev = map(lambda a: (a - mean) ** 2, matrices)
+    std_dev = reduce(lambda a, b: a + b, std_dev)
+    std_dev = list([np.sqrt(x / nsamples) for x in std_dev])
+    for i, value in enumerate(merged):
+      ##std.append(current_std)
+      mean[i] = (mean[i], std_dev[i])
+    mean.insert(0, time)  # reinserts time
+    res[config] = mean
   return res
 
 def plot(config,content,nf,pformat):
@@ -160,9 +166,12 @@ def plot(config,content,nf,pformat):
   maxy = float("-inf")
   for k in range(1,len(pformat)): # skip x-axis which is at pos 0
       #pdb.set_trace()
-      plt.plot(content[pformat[0]], content[pformat[k]], color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][pformat[k]],
+      mean, std = content[pformat[k]]
+      #mean = content[pformat[k]]
+      plt.plot(content[pformat[0]], mean, color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][pformat[k]],
                linestyle=line_styles[nf][pformat[k]])
-      maxy = max(maxy, np.nanmax(content[pformat[k]]))
+      plt.fill_between(content[pformat[0]], mean - std, mean + std, color=the_plots_colors[nf][pformat[k]], alpha=0.2)
+      maxy = max(maxy, np.nanmax(mean))
   maxy = min(maxy+10, limitPlotY[nf])
   if nf in forceLimitPlotY: maxy = forceLimitPlotY[nf]
   axes = plt.gca()
