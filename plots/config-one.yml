@@ -12,6 +12,8 @@ line_widths:
 default_colors: &default_colors ["black", "cyan", "blue","red","green",
                                  "black", "blue","red",
                                  "magenta", "brown", "orange", "green", "brown"]
+y_labels:
+  - '# of unique cluster'
 the_plots_colors:
   - *default_colors
 legend_position:
@@ -36,8 +38,9 @@ samplingField:
   - seed
 hlines:
   0: [[1, { linestyle: '--' }]]
-title_prefix: ''
+title_prefix: 'cluster count'
 excluded_titles:
+  - [4, 5]
 line_styles:
   - ['solid', 'solid', 'solid']
 format: "pdf"

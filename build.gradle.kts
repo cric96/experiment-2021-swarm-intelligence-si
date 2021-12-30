@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.gitSemVer)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.taskTree)
-    //alias(libs.plugins.scalafmt)
+    alias(libs.plugins.scalafmt)
     alias(libs.plugins.kotlin.qa)
     alias(libs.plugins.multiJvmTesting)
     scala
@@ -145,5 +145,5 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
     }
 // add scalafmt dependencies
 tasks.withType<ScalaCompile>() {
-//    dependsOn(tasks.named("scalafmtAll"))
+    dependsOn(tasks.named("scalafmtAll"))
 }

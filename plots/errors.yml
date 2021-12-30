@@ -18,6 +18,9 @@ line_widths:
 default_colors: &default_colors ["black", "cyan", "blue","red","green",
                                  "cyan", "blue","red",
                                  "magenta", "brown", "orange", "green", "brown"]
+y_labels:
+  - 'error rate'
+
 the_plots_colors:
   - *default_colors
 legend_position:
@@ -41,8 +44,9 @@ sampling:
   - true
 samplingField:
   - seed
-title_prefix: ''
+title_prefix: 'errors '
 excluded_titles:
+  - [4, 5]
 line_styles:
   - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
 format: "pdf"

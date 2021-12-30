@@ -32,7 +32,7 @@ import copy # for deepcopy
 #################################################################################
 ############################## Script functions #################################
 #################################################################################
-
+data_per_line = 2
 # returns: list of full paths of files (under directory `basedir`) filtered through a file prefix (`basefn`)
 def get_data_files(basedir, fileregex):
   return [join(basedir,p) for p in listdir(basedir) if isfile(join(basedir,p)) and re.match(fileregex,p)]
@@ -156,7 +156,14 @@ def merge_samples(contents, configs):
 def plot(config,content,nf,pformat):
   title = list(map("=".join,config))
   if doWrap is not None: title = wrap("    ".join(title), 30)
-  title = "\n".join([s.strip() for k,s in enumerate(title) if excluded_titles[nf] != None and k not in excluded_titles[nf]])
+  all_world = title
+  title = ""
+  for k, s in enumerate(all_world):
+    if excluded_titles[nf] != None and k not in excluded_titles[nf]:
+      title = title + s.strip() + " "
+    if k % data_per_line == 0 and k > 0:
+      title = title + "\n"
+  #title = "\n".join([s.strip() for k,s in enumerate(title) if excluded_titles[nf] != None and k not in excluded_titles[nf]])
 
   parts_suffix = "_".join(map("-".join,config))
 
@@ -190,7 +197,7 @@ def plot(config,content,nf,pformat):
           x = vline[0]
           kwargs = vline[1]
           plt.axvline(x, **kwargs)
-  t = plt.title(title_prefix[nf]+title)
+  t = plt.title(base_title+title_prefix[nf]+" \n "+title)
   plt.subplots_adjust(top=.84)
   suffix = (suffixes[nf] if nf in suffixes else "".join(map(str,pformat))) + "_" + parts_suffix
   savefn = outdir+basefn+"_"+str(nf)+"_"+suffix +"." + figFormat
@@ -243,7 +250,8 @@ plotconfig = sys.argv[1]
 basedir = sys.argv[2]
 fileregex = sys.argv[3]
 basefn = sys.argv[4]
-outdir = os.path.join(sys.argv[5],'') if len(sys.argv)>=6 else os.path.join(basedir, "imgs/")
+outdir = os.path.join(sys.argv[5],'') if len(sys.argv)>=7 else os.path.join(basedir, "imgs/")
+base_title = sys.argv[6]
 
 if not os.path.exists(outdir):
   os.makedirs(outdir)

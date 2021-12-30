@@ -1,0 +1,95 @@
+incarnation: scafi
+
+variables:
+  seed: &seed { min: 0.0, max: 20.0, step: 1.0, default: 1.0 }
+  simulation_length: &simulation_length { formula: 100.0 }
+  density: &density
+    type: ArbitraryVariable
+    parameters: [ 0.5, [ 0.5, 0.75 ] ]
+  grid_delta: &grid_delta
+    formula: 0.25
+  in_cluster_thr: &in_cluster_thr
+    type: ArbitraryVariable
+    parameters: [ 1.50, [ 0.5, 1.0, 1.5 ] ]
+  same_cluster_thr: &same_cluster_thr
+    type: ArbitraryVariable
+    parameters: [ 0.3, [ 0.1, 0.3, 0.7 ] ]
+  candidate_in_hysteresis: &candidate_in_hysteresis
+    type: ArbitraryVariable
+    parameters: [ 3, [ 3, 5, 7 ] ]
+  speed: &speed
+    type: ArbitraryVariable
+    parameters: [ 0.0, [ 0.0 ] ]
+  explore_area: &explore_area
+    type: ArbitraryVariable
+    parameters: [ 0.0, [ 0.0 ] ]
+
+seeds: { scenario: *seed, simulation: *seed }
+
+terminate: { type: AfterTime, parameters: [*simulation_length] }
+
+network-model:
+  type: ConnectWithinDistance
+  parameters: [ 1 ]
+
+_gradient: &program
+  - time-distribution: 1
+    type: Event
+    actions:
+    - type: RunScafiProgram
+      parameters: [ it.casestudy.Clustering ]
+  - program: send
+
+layers:
+  - type: UniformLayer
+    parameters: [ 20.0 ]
+    molecule: base-temperature
+
+  - type: UpdatableBidimensionalGuassianLayer
+    parameters: [ 0.0, 3.0, -4.0, -2.0, 0.2, 0.2 ]
+    molecule: temperature-1
+
+  - type: UpdatableBidimensionalGuassianLayer
+    parameters: [ 0.0, 0.5, 0.0, -2.0, 0.2, 0.2 ]
+    molecule: temperature-2
+
+  - type: UpdatableBidimensionalGuassianLayer
+    parameters: [ 0.0, 3.0, 3.5, -2.0, 0.2, 0.2 ]
+    molecule: temperature-3
+
+  - type: UpdatableBidimensionalGuassianLayer
+    parameters: [ 0.0, -3.0, 3.0, -2.0, 0.2, 0.2 ]
+    molecule: temperature-4
+
+  - type: BidimensionalGaussianLayer
+    parameters: [ -3, -3, -2.0, 1.0 ]
+    molecule: temperature-5
+
+  - type: LayerAggregator
+    molecule: temperature
+
+deployments:
+  type: Grid
+  parameters: [-5, -5, 5, 5, *density, *density, *grid_delta, *grid_delta]
+  programs: *program
+  contents:
+    - molecule: inClusterThr
+      concentration: *in_cluster_thr
+    - molecule: sameClusterThr
+      concentration: *same_cluster_thr
+    - molecule: waitingTime
+      concentration: *candidate_in_hysteresis
+
+export:
+  - type: CSVExporter
+    parameters: ["standardPatternsUpdate", 1.0, "./data"]
+    data:
+      - type: Time
+      - type: ClusterCount
+      - type: ClusterEvaluation
+        parameters: [ *in_cluster_thr, "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
+      - type: ClusterMisclassifications
+        parameters: [ *in_cluster_thr , "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
+      - type: ClusterMetrics
+      - type: SideEffectExtractor
+        parameters: [50, 0.7, 0.1]

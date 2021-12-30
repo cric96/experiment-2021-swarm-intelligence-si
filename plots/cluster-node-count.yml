@@ -17,6 +17,9 @@ line_widths:
 default_colors: &default_colors ["black", "cyan", "blue","red","green",
                                  "cyan", "blue","red",
                                  "magenta", "brown", "orange", "green", "brown"]
+y_labels:
+  - '# of nodes'
+
 the_plots_colors:
   - *default_colors
 legend_position:
