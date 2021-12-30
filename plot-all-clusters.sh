@@ -39,10 +39,10 @@ python plots/plotter.py plots/errors-movement.yml data "standardPatternsMovement
 python plots/plotter.py plots/metrics-movement.yml data "standardPatternsMovement*" movement-metrics /data/img/movement-metrics "Scenario 6: "
 
 printf '[\33[01;32m  updatable field  \33[01;37m]\n'
-python plots/plotter.py plots/config-five.yml data "standardPatternsUpdatable*" standard /data/img/standard-updatable "Scenario 1: "
-python plots/plotter.py plots/errors.yml data "standardPatternsUpdatable*" standard-errors /data/img/standard-updatable-errors "Scenario 1: "
-python plots/plotter.py plots/cluster-node-count.yml data "standardPatternsUpdatable*" standard-count /data/img/standard-updatable-count "Scenario 1: "
-python plots/plotter.py plots/metrics.yml data "standardPatternsUpdatable*" standard-metrics /data/img/standard-updatable-metrics "Scenario 1: "
+python plots/plotter.py plots/config-five.yml data "standardPatternsUpdatable*" standard /data/img/standard-updatable "Scenario 7: "
+python plots/plotter.py plots/errors.yml data "standardPatternsUpdatable*" standard-errors /data/img/standard-updatable-errors "Scenario 7: "
+python plots/plotter.py plots/cluster-node-count.yml data "standardPatternsUpdatable*" standard-count /data/img/standard-updatable-count "Scenario 7: "
+python plots/plotter.py plots/metrics.yml data "standardPatternsUpdatable*" standard-metrics /data/img/standard-updatable-metrics "Scenario 7: "
 
 printf '[\33[01;32m  uniform  \33[01;37m]\n'
 python plots/plotter.py plots/config-two.yml data "uniformLayers*" uniform uniform
