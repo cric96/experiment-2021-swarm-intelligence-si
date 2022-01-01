@@ -8,7 +8,7 @@ the_plots_labels:
   - 'cluster-4'
   - 'cluster-5'
 the_plots_formats:
-  - [0,3,4,5,6]
+  - [0,5,6]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
@@ -42,9 +42,9 @@ sampling:
   - true
 samplingField:
   - seed
-title_prefix: ''
+title_prefix: 'node count per cluster'
 excluded_titles:
-  - []
+  - [4, 5]
 line_styles:
   - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
 format: "pdf"
