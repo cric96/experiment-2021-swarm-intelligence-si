@@ -21,7 +21,7 @@ For further information about the GUI, see the [graphical interface shortcuts](h
 
 In Windows, I suggest you to use WSL 2. Otherwise, you should write:
 ```bash
-gradlew.bat runSimulation
+gradlew.bat runAllGraphic
 ```
 ## Re-generating all the data
 The experiment is entirely reproducible.
