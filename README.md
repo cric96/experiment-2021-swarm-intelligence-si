@@ -1,4 +1,6 @@
 # A Field-based Computing Approach to Sensing-driven Clustering in Robot Swarms
+[![DOI](https://zenodo.org/badge/434830188.svg)](https://zenodo.org/badge/latestdoi/434830188)
+
 This repository contains the experiments that explore sensing-driven clustering techniques applied in Aggregate Computing.
 
 In [result discussion](./RESULT-BRIEF-DISCUSSION.md) there is a legend that explain how to interpret the graphical simulations.
