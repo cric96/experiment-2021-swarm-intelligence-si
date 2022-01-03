@@ -50,12 +50,10 @@ jobs:
         uses: danysk/action-checkout@0.1.0
       - name: Install requirements
         run: pip install -r requirements.txt --user
-      - name: Prepare charts folder
-        run: mkdir -p charts
       - name: Generate charts
-        run: python process.py
+        run: ./plot-all-clusters.sh
       - name: Generate archive
-        run: tar --use-compress-program zstd -cf charts.tar.zst charts/
+        run: tar --use-compress-program zstd -cf charts.tar.zst data/img
       - uses: ncipollo/release-action@v1
         if: ${{ github.event_name != 'pull_request' }}
         name: Create GitHub Release
