@@ -1,5 +1,5 @@
 [versions]
-alchemist = "12.1.6"
+alchemist = "21.0.2"
 kotlin = "1.6.0"
 scala = "2.13.4"
 breeze = "2.0"
@@ -8,7 +8,6 @@ scalacache = "0.28.0"
 [libraries]
 alchemist = { module = "it.unibo.alchemist:alchemist", version.ref = "alchemist" }
 alchemist-scafi = { module = "it.unibo.alchemist:alchemist-incarnation-scafi", version.ref = "alchemist" }
-alchemist-interfaces = { module = "it.unibo.alchemist:alchemist-interfaces", version.ref = "alchemist" }
 alchemist-tooling = { module = "it.unibo.alchemist:alchemist-ui-tooling", version.ref = "alchemist" }
 alchemist-swing = { module = "it.unibo.alchemist:alchemist-swingui", version.ref = "alchemist"}
 alchemist-geometry = { module = "it.unibo.alchemist:alchemist-euclidean-geometry", version.ref = "alchemist"}
@@ -18,7 +17,7 @@ breeze-math = { module = "org.scalanlp:breeze_2.13", version.ref = "breeze" }
 scala-cache = { module = "com.github.cb372:scalacache-guava_2.13", version.ref = "scalacache"}
 
 [bundles]
-alchemist-bundle = [ "alchemist", "alchemist-scafi", "alchemist-interfaces", "alchemist-tooling", "alchemist-swing", "alchemist-geometry"]
+alchemist-bundle = [ "alchemist", "alchemist-scafi", "alchemist-tooling", "alchemist-swing", "alchemist-geometry"]
 utils-bundle = [ "scala-cache", "scala-compiler", "breeze-math" ]
 
 [plugins]
