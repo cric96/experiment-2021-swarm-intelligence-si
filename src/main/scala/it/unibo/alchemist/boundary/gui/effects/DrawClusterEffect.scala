@@ -1,6 +1,7 @@
 package it.unibo.alchemist.boundary.gui.effects
 import it.unibo.alchemist.boundary.gui.effects.DrawClusterEffect._
-import it.unibo.alchemist.boundary.wormhole.interfaces.Wormhole2D
+import it.unibo.alchemist.boundary.swingui.effect.api.Effect
+import it.unibo.alchemist.boundary.ui.api.Wormhole2D
 import it.unibo.alchemist.model.implementations.nodes.SimpleNodeManager
 import it.unibo.alchemist.model.interfaces.{Environment, Node, Position2D}
 import scalacache._

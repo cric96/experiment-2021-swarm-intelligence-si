@@ -1,6 +1,8 @@
 package it.unibo.alchemist.boundary.gui.effects;
 
-import it.unibo.alchemist.boundary.wormhole.interfaces.Wormhole2D;
+import it.unibo.alchemist.boundary.swingui.effect.api.LayerToFunctionMapper;
+import it.unibo.alchemist.boundary.swingui.effect.impl.DrawLayersValues;
+import it.unibo.alchemist.boundary.ui.api.Wormhole2D;
 import it.unibo.alchemist.model.implementations.layers.BidimensionalGaussianLayer;
 import it.unibo.alchemist.model.interfaces.Environment;
 import it.unibo.alchemist.model.interfaces.Layer;

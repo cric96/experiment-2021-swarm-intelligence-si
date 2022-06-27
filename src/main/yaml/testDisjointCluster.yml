@@ -20,7 +20,7 @@ _gradient: &program
   - program: send
 
 layers:
-  - type: UniformLayer
+  - type: ConstantLayer
     parameters: [ 20.0 ]
     molecule: base-temperature
 

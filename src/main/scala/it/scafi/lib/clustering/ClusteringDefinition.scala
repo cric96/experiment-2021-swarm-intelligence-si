@@ -1,4 +1,5 @@
 package it.scafi.lib.clustering
+import it.scafi.ProcessFix
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 /**
