@@ -26,7 +26,7 @@ case class SpatialData[V: Numeric](point: P, data: V)(implicit ev: Double => V) 
     val data = scalaRep.last
     SpatialData[V](Point3D(x, y, z), data)
   }
-  /* Some matemathical operations */
+  /* Some mathematical operations */
   def min(other: SpatialData[V]): SpatialData[V] = linalg.min(this.underlyingRep, other.underlyingRep)
 
   def max(other: SpatialData[V]): SpatialData[V] = linalg.max(this.underlyingRep, other.underlyingRep)
