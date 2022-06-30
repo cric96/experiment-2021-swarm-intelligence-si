@@ -1,5 +1,6 @@
 package it.examples
 
+import it.scafi.lib.BlocksWithShare
 import it.scafi.lib.clustering.ClusteringLib
 import it.scafi.{ProcessFix, SenseLayers}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist.{ScafiAlchemistSupport, _}
@@ -27,6 +28,7 @@ trait Libs
     with ProcessFix
     with TimeUtils
     with StateManagement
+    with BlocksWithShare
     with ClusteringLib {}
 
 class TemperatureDisjointedBased extends Libs {

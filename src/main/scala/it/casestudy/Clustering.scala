@@ -1,11 +1,12 @@
 package it.casestudy
 
 import it.casestudy.Clustering._
+import it.scafi.lib.BlocksWithShare
 import it.scafi.lib.clustering.ClusteringLib
-
 import it.scafi.{MovementUtils, ProcessFix}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.util.Try
 
 class Clustering
@@ -20,6 +21,7 @@ class Clustering
     with TimeUtils
     with StateManagement
     with MovementUtils
+    with BlocksWithShare
     with ClusteringLib {
   // Context
   implicit val precision: Precision = Precision(0.000001)
@@ -98,7 +100,7 @@ class Clustering
    */
   def evaluateClusterInformation(potential: Int, temperature: Double): ClusterInformation[Double] = {
     val data = {
-      C[Int, Map[ID, SpatialData[Double]]](
+      CWithShare[Int, Map[ID, SpatialData[Double]]](
         potential,
         _ ++ _,
         Map(mid() -> SpatialData(currentPosition(), temperature)),

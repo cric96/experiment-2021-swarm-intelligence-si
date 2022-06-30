@@ -1,5 +1,5 @@
 package it.scafi.lib.clustering
-import it.scafi.ProcessFix
+import it.scafi.lib.BlocksWithShare
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 /**
@@ -10,7 +10,15 @@ import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
  * b) Overlap: implementation of clustering algorithm using aggregate processes.
  */
 trait ClusteringDefinition {
-  self: AggregateProgram with StandardSensors with BlockG with CustomSpawn with BlockC with ClusteringAbstraction =>
+  self: AggregateProgram
+    with StandardSensors
+    with BlockG
+    with CustomSpawn
+    with BlockC
+    with ClusteringAbstraction
+    with BlocksWithShare =>
+
+  import Builtins.Bounded
 
   /**
    * Define the common implementation used for both Disjoint and Overlap implementations.
@@ -29,7 +37,7 @@ trait ClusteringDefinition {
     def computeSummaryAndShare(leader: Boolean): Option[ClusterData] = {
       val potential = classicGradient(leader, metric)
       val summary =
-        C(potential, (left, right) => combineOption(left, right), Some(localData), Option.empty[LocalData])
+        CWithShare(potential, (left, right) => combineOption(left, right), Some(localData), Option.empty[LocalData])
       val broadcastSummary: Option[ClusterData] =
         broadcast(leader, branch(leader) { summary.map(finalization) } { None })
       broadcastSummary
@@ -58,7 +66,12 @@ trait ClusteringDefinition {
       else { Option.empty[Key] }
       // 2. Start to share my local input (e.g. temperature). Expand define how the input change during the expansion
       val expandClusterFromLeader: (Option[Key], Input) =
-        G(isCandidate, (clusterCenter, input), (data: (Option[Key], Input)) => (data._1, expand(data._2)), metric)
+        GWithShare(
+          isCandidate,
+          (clusterCenter, input),
+          (data: (Option[Key], Input)) => (data._1, expand(data._2)),
+          metric
+        )
       // 3. Cluster in-out check
       expandClusterFromLeader match {
         // 3.1 A cluster key is received
@@ -141,7 +154,7 @@ trait ClusteringDefinition {
             // 1. Check if the node is the leader and prepare the input to share to other nodes
             val center = mux(processOwner) { Option(input) } { Option.empty[Input] }
             // 2. Expand the input generated from the leader
-            val expandClusterFromLeader = G[Option[Input]](processOwner, center, i => i.map(expand), metric)
+            val expandClusterFromLeader = GWithShare[Option[Input]](processOwner, center, i => i.map(expand), metric)
             // 3. Compute the cluster data and share to other nodes
             expandClusterFromLeader match {
               // 3.1 I am outside of current process, so I return External as result
@@ -151,7 +164,7 @@ trait ClusteringDefinition {
               case Some(leaderData) =>
                 // 3.2.1 I verify if I am inside or outside this cluster
                 branch(inCondition(key, leaderData)) {
-                  // 3.2.2 If I am inside, I partecipate into the local data collection and finalization (so return Output)
+                  // 3.2.2 If I am inside, I participate into the local data collection and finalization (so return Output)
                   POut(computeSummaryAndShare(processOwner), SpawnInterface.Output)
                 } {
                   // 3.2.3 Otherwise I am outside of the current cluster, so I return external
@@ -174,9 +187,9 @@ trait ClusteringDefinition {
           killProcessOrCompute(toKill, key) { // helper to suppress clustering process
             val processOwner = key == keyFactory
             branch(localCluster.keySet.contains(key)) { // Expand process in node that contains my key as a cluster
-              val potential = classicGradient(processOwner, metric)
+              val potential = classicGradientWithShare(processOwner, metric)
               // 1. collect all cluster computed by nodes
-              val allInformation = C[Double, Cluster](potential, _ ++ _, input, emptyCluster)
+              val allInformation = CWithShare[Double, Cluster](potential, _ ++ _, input, emptyCluster)
               // 2. merge the clusters (leader perform the operation)
               val shareDecision = mux(processOwner) { mergePolicy(key, allInformation) } {
                 // identity. safe because I am in branch where localCluster contains key
