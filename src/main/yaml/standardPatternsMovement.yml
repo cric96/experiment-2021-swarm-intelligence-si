@@ -17,7 +17,7 @@ variables:
     parameters: [ 3, [ 3, 5, 7 ] ]
   speed: &speed
     type: ArbitraryVariable
-    parameters: [ 0.02, [ 0.02, 0.03, 0.04 ] ]
+    parameters: [ 0.04, [ 0.02, 0.03, 0.04 ] ]
   explore_area: &explore_area
     type: ArbitraryVariable
     parameters: [ 0.5, [ 0.5, 0.6 ] ]
@@ -37,7 +37,7 @@ _gradient: &program
     type: Event
     actions:
     - type: RunScafiProgram
-      parameters: [ it.casestudy.Clustering]
+      parameters: [ it.casestudy.ClusteringApp, 2.0]
   - program: send
 
 layers:

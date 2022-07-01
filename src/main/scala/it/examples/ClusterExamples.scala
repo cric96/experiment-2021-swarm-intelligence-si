@@ -53,21 +53,29 @@ class TemperatureDisjointedBased extends Libs {
 
 class TemperatureOverlapBased extends Libs {
   def temperatureToBroadcast(id: ID, temperature: Double): Double = mux(id == mid()) { temperature } { -1 }
+  def noMoreCandidate(candidate: Boolean): Set[ID] = mux(!candidate) { Set(mid()) } { Set.empty }
+
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double]("temperature")
     val thr = 0.5
     val id = includingSelf.minHoodSelector(nbr(temperature))(nbr(mid()))
-    val clusterStarter = branch(id == mid()) { T(5) <= 0 } { false }
-    val clusters = cluster
-      .input(temperature)
-      .key(mid())
-      .shareInput
-      .withoutDataGathering
-      .candidate(clusterStarter)
-      .inIff((_, leaderTemp) => Math.abs(leaderTemp - temperature) <= thr)
-      .watchDog { mux(!clusterStarter) { Set(mid()) } { Set.empty } }
-      .overlap()
-
+    val neighCount = foldhoodPlus(0)(_ + _)(1)
+    node.put("neigh", excludingSelf.reifyField(1))
+    node.put("count", neighCount)
+    val clusterStarter = branch(id == mid()) { T(5) <= 0 && neighCount > 1 } { false }
+    val clusters = rep(emptyClusterDivision[ID, Unit]) { feedback =>
+      cluster
+        .input(temperature)
+        .key(mid())
+        .shareInput
+        .withoutDataGathering
+        .candidate(clusterStarter)
+        .inIff((_, leaderTemp) => Math.abs(leaderTemp - temperature) <= thr)
+        .watchDog {
+          noMoreCandidate(clusterStarter) ++ lastWillWatchDog(feedback.all, 5, identity[ID])
+        }
+        .overlap()
+    }
     node.put("candidate", clusterStarter)
     node.put("clusters", clusters.merged.keySet)
   }
@@ -95,9 +103,7 @@ class ClusterBasedOnNumber extends Libs {
     val clusters = rep(emptyClusterDivision[ID, Int]) { division =>
       {
         cluster
-          .input {
-            computeRange(division.merged, initialRange, howMany, delta)
-          }
+          .input { computeRange(division.merged, initialRange, howMany, delta) }
           .key(mid())
           .expand(r => r - nbrRange())
           .localInformation(1)

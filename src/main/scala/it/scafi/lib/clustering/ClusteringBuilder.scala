@@ -49,6 +49,7 @@ trait ClusteringBuilder {
     override def collect(accumulator: D, local: D): D = context.collect(accumulator, local)
     override def finalization(clusterData: D): C = context.finalization(clusterData)
     override def inCondition(key: K, data: I): Boolean = context.inCondition(key, data)
+    override def lastWillCount: Int = context.lastWillCounts()
   }
   /* helper to build a clustering algorithm. It contains all the function needed. Outside of clustering, this should be
    * not visible, because expose null initialization. The builder step below allows a safe creation.s */
@@ -61,7 +62,8 @@ trait ClusteringBuilder {
     collect: (D, D) => D = null,
     finalization: D => C = null,
     inCondition: (K, I) => Boolean = null,
-    metric: Metric = nbrRange
+    metric: Metric = nbrRange,
+    lastWillCounts: () => Int = null
   ) {}
 
   /*

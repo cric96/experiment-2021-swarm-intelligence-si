@@ -5,7 +5,7 @@ variables:
 
 seeds: { scenario: *seed, simulation: *seed }
 
-terminate: { type: AfterTime, parameters: [ 50 ] }
+terminate: { type: AfterTime, parameters: [ 150 ] }
 
 network-model:
   type: ConnectWithinDistance
@@ -16,9 +16,21 @@ _gradient: &program
     type: Event
     actions:
     - type: RunScafiProgram
-      parameters: [ it.examples.TemperatureOverlapBased ]
+      parameters: [ it.examples.TemperatureOverlapBased, 1 ]
   - program: send
 
+_remover: &remover
+  - time-distribution: 0.1
+    type: Event
+    actions:
+    - type: RandomRemoveNode
+
+_adder: &adder
+  - time-distribution: 0.1
+    type: Event
+    actions:
+      - type: RandomAddNode
+        parameters: [ 0.75, 0.05]
 layers:
   - type: ConstantLayer
     parameters: [ 20.0 ]
@@ -48,6 +60,15 @@ layers:
     molecule: temperature
 
 deployments:
-  type: Grid
-  parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
-  programs: *program
+  - type: Grid
+    parameters: [-5, -5, 5, 5, 0.5, 0.5, 0.25, 0.25]
+    programs:
+      - *program
+  - type: Point # God
+    parameters: [-10, -10]
+    programs:
+      - *remover
+      #- *adder
+    contents:
+      molecule: global
+      concentration: true

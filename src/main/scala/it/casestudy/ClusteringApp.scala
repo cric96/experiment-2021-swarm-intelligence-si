@@ -1,15 +1,14 @@
 package it.casestudy
 
-import it.casestudy.Clustering._
+import it.casestudy.ClusteringApp._
 import it.scafi.lib.BlocksWithShare
 import it.scafi.lib.clustering.ClusteringLib
 import it.scafi.{MovementUtils, ProcessFix}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
-import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.util.Try
 
-class Clustering
+class ClusteringApp
     extends AggregateProgram
     with StandardSensors
     with ScafiAlchemistSupport
@@ -155,7 +154,9 @@ class Clustering
   ): Set[ClusteringKey] = {
     val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
     val noMoreOnCenter = processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
-    noMoreOnCenter ++ noMoreRechable(processes, lastWillCount)
+    val lastWillIds =
+      lastWillWatchDog[ClusteringKey, ClusterInformation[Double]](processes, lastWillCount, key => key.leaderId)
+    noMoreOnCenter ++ lastWillIds
   }
 
   def movementLogic(clusters: Clustering.Cluster[ClusteringKey, ClusterInformation[Double]]): Unit = {
@@ -165,28 +166,9 @@ class Clustering
       node.put(Molecules.target, explore(zone, maxFollowDirectionTime, reachTargetThr))
     }
   }
-
-  def noMoreRechable(
-    processes: Map[ClusteringKey, ClusterInformation[Double]],
-    lastWillCount: Int
-  ): Set[ClusteringKey] = {
-    processes.keys
-      .map(key => {
-        align(key.leaderId) { k =>
-          val leaderBeats = broadcast(k == mid(), roundCounter())
-          val (leaderNotReachable, _) = rep((false, leaderBeats)) { case (_, old) =>
-            (branch(old == leaderBeats) { T(lastWillCount) == 0 } { false }, leaderBeats)
-          }
-          (key, leaderNotReachable)
-        }
-      })
-      .filter { case (_, noSignal) => noSignal }
-      .map { case (id, _) => id }
-      .toSet
-  }
 }
 
-object Clustering {
+object ClusteringApp {
   case class ClusteringKey(leaderId: ID)(val startingTemperature: Double)
   case class ClusteringProcessOutput(
     hopCountDistance: Int,

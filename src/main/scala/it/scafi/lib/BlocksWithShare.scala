@@ -25,6 +25,13 @@ trait BlocksWithShare {
       }
     }._2
 
+  def GAlongWithShare[V](g: Double, metric: Metric, field: V, acc: V => V): V = {
+    share(field) { case (_, nbrField) =>
+      mux(g == 0.0) { field } {
+        excludingSelf.minHoodSelector[Double, V](nbr { g } + metric())(acc(nbrField())).getOrElse(field)
+      }
+    }
+  }
   def classicGradientWithShare(source: Boolean, metric: () => Double = nbrRange): Double =
     share(Double.PositiveInfinity) { case (_, nbrg) =>
       mux(source) {

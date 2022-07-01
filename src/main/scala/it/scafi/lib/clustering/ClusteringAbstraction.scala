@@ -46,6 +46,9 @@ trait ClusteringAbstraction {
     /** Candidate definition: a predicate that return True when the node should start a cluster expansion, false otherwise */
     def isCandidate: Boolean
 
+    /** Define the counts used to mark a process as terminated (i.e., due to split brains or failures) */
+    def lastWillCount: Int
+
     /**
      * Expand definition: describe how the input selected in the leader evolve during the gradient cast expansion*
      * @param input: input field that need that need to be changed

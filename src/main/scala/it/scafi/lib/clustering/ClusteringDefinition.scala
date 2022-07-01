@@ -14,11 +14,12 @@ trait ClusteringDefinition {
     with StandardSensors
     with BlockG
     with CustomSpawn
+    with ScafiAlchemistSupport
     with BlockC
+    with BlockT
+    with StateManagement
     with ClusteringAbstraction
     with BlocksWithShare =>
-
-  import Builtins.Bounded
 
   /**
    * Define the common implementation used for both Disjoint and Overlap implementations.
@@ -35,11 +36,16 @@ trait ClusteringDefinition {
      * @return Option.of(ClusterData) if the node is in the cluster of leader, None otherwise
      */
     def computeSummaryAndShare(leader: Boolean): Option[ClusterData] = {
-      val potential = classicGradient(leader, metric)
+      val potential = classicGradientWithShare(leader, metric)
       val summary =
         CWithShare(potential, (left, right) => combineOption(left, right), Some(localData), Option.empty[LocalData])
       val broadcastSummary: Option[ClusterData] =
-        broadcast(leader, branch(leader) { summary.map(finalization) } { None })
+        GAlongWithShare(
+          potential,
+          nbrRange,
+          branchOpt(leader) { summary.map(finalization) } { None }("computeSummaryAndShare"),
+          identity[Option[ClusterData]]
+        )
       broadcastSummary
     }
   }
@@ -153,8 +159,10 @@ trait ClusteringDefinition {
             val processOwner = key == keyFactory
             // 1. Check if the node is the leader and prepare the input to share to other nodes
             val center = mux(processOwner) { Option(input) } { Option.empty[Input] }
+            val heartbeat = roundCounter() // counter used to notify if the leader is alive or not
             // 2. Expand the input generated from the leader
-            val expandClusterFromLeader = GWithShare[Option[Input]](processOwner, center, i => i.map(expand), metric)
+            val potential = classicGradientWithShare(processOwner)
+            val expandClusterFromLeader = GAlongWithShare[Option[Input]](potential, metric, center, i => i.map(expand))
             // 3. Compute the cluster data and share to other nodes
             expandClusterFromLeader match {
               // 3.1 I am outside of current process, so I return External as result
@@ -163,13 +171,16 @@ trait ClusteringDefinition {
               // 3.2 I have received the data from the current process owner
               case Some(leaderData) =>
                 // 3.2.1 I verify if I am inside or outside this cluster
-                branch(inCondition(key, leaderData)) {
+                branchOpt(inCondition(key, leaderData)) {
                   // 3.2.2 If I am inside, I participate into the local data collection and finalization (so return Output)
                   POut(computeSummaryAndShare(processOwner), SpawnInterface.Output)
                 } {
-                  // 3.2.3 Otherwise I am outside of the current cluster, so I return external
-                  POut(Option.empty[ClusterData], SpawnInterface.External)
-                }
+                  // 3.2.3 Otherwise I am outside of the current cluster, so I return external (or Terminated if I sense the leader as not reachable)
+                  POut(
+                    Option.empty[ClusterData],
+                    SpawnInterface.External
+                  )
+                }("expand")
             }
           }
         }
@@ -186,7 +197,7 @@ trait ClusteringDefinition {
         { case OverlapProcessInput(input, toKill) =>
           killProcessOrCompute(toKill, key) { // helper to suppress clustering process
             val processOwner = key == keyFactory
-            branch(localCluster.keySet.contains(key)) { // Expand process in node that contains my key as a cluster
+            branchOpt(localCluster.keySet.contains(key)) { // Expand process in node that contains my key as a cluster
               val potential = classicGradientWithShare(processOwner, metric)
               // 1. collect all cluster computed by nodes
               val allInformation = CWithShare[Double, Cluster](potential, _ ++ _, input, emptyCluster)
@@ -199,7 +210,7 @@ trait ClusteringDefinition {
               POut(Option(broadcast(processOwner, shareDecision)), SpawnInterface.Output)
             } {
               POut(Option.empty[(Key, ClusterData)], SpawnInterface.External)
-            }
+            }("union")
           }
         }
       }
@@ -223,5 +234,9 @@ trait ClusteringDefinition {
       }
     }
   }
-
+  def branchOpt[A](cond: => Boolean)(th: => A)(el: => A)(tag: String): A = {
+    val left = () => align(s"$tag-left")(_ => th)
+    val right = () => align(s"$tag-right")(_ => el)
+    mux(cond)(left)(right)()
+  }
 }

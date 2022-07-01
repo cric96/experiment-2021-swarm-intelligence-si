@@ -1,5 +1,5 @@
 [versions]
-alchemist = "21.0.2"
+alchemist = "21.0.8"
 kotlin = "1.6.0"
 scala = "2.13.4"
 breeze = "2.0"
