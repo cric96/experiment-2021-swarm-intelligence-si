@@ -55,7 +55,7 @@ class Clustering
         .candidate(candidate)
         .inIff { (_, input) => inCluster(temperature, input.temperaturePerceived, threshold) }
         .merge((key, clusters) => mergeCluster(key, clusters))
-        .watchDog { watchDog(feedbackResult.merged, candidate) }
+        .watchDog { watchDog(feedbackResult.all, candidate) }
         .overlap()
     }
     node.put(Molecules.temperaturePerceived, temperature)
@@ -148,18 +148,41 @@ class Clustering
    * @param processes the process perceived from a node
    * @return the set of processes that will be killed
    */
-  def watchDog(processes: Map[ClusteringKey, ClusterInformation[Double]], candidate: Boolean): Set[ClusteringKey] = {
+  def watchDog(
+    processes: Map[ClusteringKey, ClusterInformation[Double]],
+    candidate: Boolean,
+    lastWillCount: Int = 10
+  ): Set[ClusteringKey] = {
     val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
-    processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
+    val noMoreOnCenter = processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet
+    noMoreOnCenter ++ noMoreRechable(processes, lastWillCount)
   }
 
   def movementLogic(clusters: Clustering.Cluster[ClusteringKey, ClusterInformation[Double]]): Unit = {
     if (clusters.keySet.map(_.leaderId).contains(mid())) {
       node.put(Molecules.target, currentPosition())
     } else {
-
       node.put(Molecules.target, explore(zone, maxFollowDirectionTime, reachTargetThr))
     }
+  }
+
+  def noMoreRechable(
+    processes: Map[ClusteringKey, ClusterInformation[Double]],
+    lastWillCount: Int
+  ): Set[ClusteringKey] = {
+    processes.keys
+      .map(key => {
+        align(key.leaderId) { k =>
+          val leaderBeats = broadcast(k == mid(), roundCounter())
+          val (leaderNotReachable, _) = rep((false, leaderBeats)) { case (_, old) =>
+            (branch(old == leaderBeats) { T(lastWillCount) == 0 } { false }, leaderBeats)
+          }
+          (key, leaderNotReachable)
+        }
+      })
+      .filter { case (_, noSignal) => noSignal }
+      .map { case (id, _) => id }
+      .toSet
   }
 }
 
