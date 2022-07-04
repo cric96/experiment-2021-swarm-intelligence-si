@@ -21,6 +21,13 @@ variables:
   explore_area: &explore_area
     type: ArbitraryVariable
     parameters: [ 0.5, [ 0.5, 0.6 ] ]
+  ##### UNUSED => used only for configuring multiple simulations
+  fail_frequency: &fail_frequency
+    type: ArbitraryVariable
+    parameters: [ 0.1, [ 0.1 ] ]
+  new_node_frequency: &new_node_frequency
+    type: ArbitraryVariable
+    parameters: [ 0.1, [ 0.1 ] ]
 
 
 _zero: &zero "null"
