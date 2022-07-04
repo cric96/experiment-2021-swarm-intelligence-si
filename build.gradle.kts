@@ -132,7 +132,7 @@ File(rootProject.rootDir.path + "/src/main/yaml").listFiles()
             "candidate_in_hysteresis",
             "speed",
             "density",
-            "explore_area"
+            "explore_area",
         )
         val onlySeed = batchWithArgs("OnlySeed")
         if(!capitalizedName.contains("Test")) {
