@@ -36,8 +36,8 @@ class ClusteringApp
   private lazy val zone = RectangularZone(zoneCenter, zoneSize * 2, zoneSize * 2)
   override def main(): Any = {
     val temperature: Double = sense[java.lang.Double](Molecules.temperature)
-    // waiting time before starting a process
-    val candidate = branch(isCandidate()) { T(waitingTime) <= 0 } { false }
+    val neighCount = foldhoodPlus(0)(_ + _)(1)
+    val candidate = branch(isCandidate()) { T(waitingTime) <= 0 && neighCount > 1 } { false }
     val clusters = rep(emptyClusterDivision[ClusteringKey, ClusterInformation[Double]]) { feedbackResult =>
       cluster
         .input { ClusteringProcessInput(temperature, threshold, candidate) }
@@ -150,7 +150,7 @@ class ClusteringApp
   def watchDog(
     processes: Map[ClusteringKey, ClusterInformation[Double]],
     candidate: Boolean,
-    lastWillCount: Int = 10
+    lastWillCount: Int = 10 // todo add to configuration
   ): Set[ClusteringKey] = {
     val killProcess = !candidate // branch(!candidate) { T(0) <= 0 } { false }
     val noMoreOnCenter = processes.filter { case (ClusteringKey(id), _) => mid() == id && killProcess }.keySet

@@ -1,5 +1,5 @@
 [versions]
-alchemist = "21.0.8"
+alchemist = "22.0.0"
 kotlin = "1.6.0"
 scala = "2.13.4"
 breeze = "2.0"
@@ -11,7 +11,6 @@ alchemist-scafi = { module = "it.unibo.alchemist:alchemist-incarnation-scafi", v
 alchemist-tooling = { module = "it.unibo.alchemist:alchemist-ui-tooling", version.ref = "alchemist" }
 alchemist-swing = { module = "it.unibo.alchemist:alchemist-swingui", version.ref = "alchemist"}
 alchemist-geometry = { module = "it.unibo.alchemist:alchemist-euclidean-geometry", version.ref = "alchemist"}
-
 scala-compiler = { module = "org.scala-lang:scala-library", version.ref = "scala"}
 breeze-math = { module = "org.scalanlp:breeze_2.13", version.ref = "breeze" }
 scala-cache = { module = "com.github.cb372:scalacache-guava_2.13", version.ref = "scalacache"}
