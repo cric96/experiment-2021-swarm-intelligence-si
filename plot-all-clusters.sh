@@ -47,3 +47,6 @@ python plots/plotter.py plots/metrics.yml data "standardPatternsUpdate*" standar
 printf '[\33[01;32m  uniform  \33[01;37m]\n'
 python plots/plotter.py plots/config-two.yml data "uniformLayers*" uniform uniform ./data/img/uniform "Scenario 8: "
 python plots/plotter.py plots/metrics.yml data "uniformLayers*" uniform-metrics uniform-metrics ./data/img/uniform  "Scenario 8: "
+
+printf '[\33[01;32m  failures  \33[01;37m]\n'
+python failurePlot.py
