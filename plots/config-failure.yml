@@ -2,40 +2,32 @@ the_plots_labels:
   - Time                 #0
   - 'clusters'
   - 'all clusters'
-  - 'cluster-1'
-  - 'cluster-2'
-  - 'cluster-3'
-  - 'cluster-4'
-  - 'cluster-5'
-  - 'errors'
-  - 'silhouette'
-  - 'dunn index'
 the_plots_formats:
-  - [0,9,10]
+  - [0,2,1]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
 line_widths:
-  - [2,2,2,2,2,2,2,2,2,2,2,2,2]
+  - [2,2,5,2,2,2,2,2,2,2,2]
 default_colors: &default_colors ["black", "cyan", "blue","red","green",
-                                 "cyan", "blue","red",
+                                 "black", "blue","red",
                                  "magenta", "brown", "orange", "green", "brown"]
-
 y_labels:
-  - 'index value'
+  - '# of unique cluster'
 
 the_plots_colors:
   - *default_colors
 legend_position:
   - "upper right"
-  - "upper right"
 legend_size: 12
+force_limit_plot_y:
+#  1: 140
+#   3: 1000
+#  4: 35
+#  0: 40
+#  3: 80
 start_plot_x:
   0: 90
-start_plot_y:
-  - -2
-force_limit_plot_y:
-  - 4
 force_limit_plot_x:
 #  0: 820
 #  1: 800
@@ -44,10 +36,11 @@ sampling:
   - true
 samplingField:
   - seed
-
-title_prefix: 'Internal metrics'
+hlines:
+  0: [[5, { linestyle: '--' }]]
+title_prefix: 'cluster count'
 excluded_titles:
-  - [4, 5, 6, 7]
+  - [4, 5]
 line_styles:
-  - ['solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid', 'solid']
+  - ['solid', 'solid', 'solid']
 format: "pdf"

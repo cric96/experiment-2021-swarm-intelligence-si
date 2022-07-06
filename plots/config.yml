@@ -41,7 +41,7 @@ hlines:
   0: [[4, { linestyle: '--' }]]
 title_prefix: 'cluster count'
 excluded_titles:
-  - [4, 5]
+  - [4, 5, 6, 7]
 line_styles:
   - ['solid', 'solid', 'solid']
 format: "pdf"
