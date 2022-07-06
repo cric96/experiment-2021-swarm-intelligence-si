@@ -16,6 +16,10 @@ zmv $folder/'(*)candidate_in_hysteresis(*)' $folder/'$1β$2'
 printf "."
 zmv $folder/'(*)explore_area(*)' $folder/'$1ζ$2'
 printf "."
+zmv $folder/'(*)fail_frequency(*)' $folder/'$1ξ$2'
+printf "."
+zmv $folder/'(*)new_node_frequency(*)' $folder/'$1τ$2'
+printf "."
 zmv $folder/'(*)0.02(*)' $folder/'$1{7}$2'
 printf "."
 zmv $folder/'(*)0.03(*)' $folder/'$1{10}$2'
