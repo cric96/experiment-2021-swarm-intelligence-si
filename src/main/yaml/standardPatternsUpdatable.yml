@@ -53,19 +53,19 @@ layers:
     molecule: base-temperature
 
   - type: UpdatableBidimensionalGuassianLayer
-    parameters: [ 0.0, 3.0, -4.0, -2.0, 0.2, 0.2 ]
+    parameters: [ 0.0, 3.0, -4.0, -2.0, 0.35, 0.35 ]
     molecule: temperature-1
 
   - type: UpdatableBidimensionalGuassianLayer
-    parameters: [ 0.0, 0.5, 0.0, -2.0, 0.2, 0.2 ]
+    parameters: [ 0.0, 0.5, 0.0, -2.0, 0.35, 0.35 ]
     molecule: temperature-2
 
   - type: UpdatableBidimensionalGuassianLayer
-    parameters: [ 0.0, 3.0, 3.5, -2.0, 0.2, 0.2 ]
+    parameters: [ 0.0, 3.0, 3.5, -2.0, 0.35, 0.35 ]
     molecule: temperature-3
 
   - type: UpdatableBidimensionalGuassianLayer
-    parameters: [ 0.0, -3.0, 3.0, -2.0, 0.2, 0.2 ]
+    parameters: [ 0.0, -3.0, 3.0, -2.0, 0.35, 0.35 ]
     molecule: temperature-4
 
   - type: BidimensionalGaussianLayer
@@ -99,4 +99,4 @@ export:
         parameters: [ *in_cluster_thr , "temperature-1", "temperature-2", "temperature-3", "temperature-4", "temperature-5" ]
       - type: ClusterMetrics
       - type: SideEffectExtractor
-        parameters: [50, 0.7, 0.1]
+        parameters: [50, 0.6, 0.4]

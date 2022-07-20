@@ -13,7 +13,6 @@ trait BlocksWithShare {
         }
       )
     }
-
   def GWithShare[V](source: Boolean, field: V, acc: V => V, metric: () => Double): V =
     share((Double.MaxValue, field)) { case ((dist, value), nbrvalues) =>
       mux(source) {

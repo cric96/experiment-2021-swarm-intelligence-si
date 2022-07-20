@@ -44,9 +44,9 @@ python plots/plotter.py plots/errors.yml data "standardPatternsUpdate*" standard
 python plots/plotter.py plots/cluster-node-count-four.yml data "standardPatternsUpdate*" standard-updatable-count ./data/img/standard-updatable-count "Scenario 7: "
 python plots/plotter.py plots/metrics.yml data "standardPatternsUpdate*" standard-updatable-metrics ./data/img/standard-updatable-metrics "Scenario 7: "
 
-printf '[\33[01;32m  uniform  \33[01;37m]\n'
-python plots/plotter.py plots/config-two.yml data "uniformLayers*" uniform uniform ./data/img/uniform "Scenario 8: "
-python plots/plotter.py plots/metrics.yml data "uniformLayers*" uniform-metrics uniform-metrics ./data/img/uniform  "Scenario 8: "
-
 printf '[\33[01;32m  failures  \33[01;37m]\n'
 python failurePlot.py
+
+printf '[\33[01;32m  uniform  \33[01;37m]\n'
+python plots/plotter.py plots/config-two.yml data "uniformLayers*" uniform ./data/img/uniform "Scenario 9: "
+python plots/plotter.py plots/metrics.yml data "uniformLayers*" uniform-metrics ./data/img/uniform-metrics  "Scenario 9: "
