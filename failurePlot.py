@@ -1,6 +1,6 @@
 import subprocess
 
-rate_values = [0.01, 0.1, 0.5]
+rate_values = [0.001, 0.1, 0.5]
 file_names = ["failScenario"]
 configurations = [
     ("config-failure.yml", ""),
