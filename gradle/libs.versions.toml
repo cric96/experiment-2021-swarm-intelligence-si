@@ -2,7 +2,7 @@
 alchemist = "22.0.0"
 kotlin = "1.7.10"
 scala = "2.13.8"
-breeze = "2.0"
+breeze = "2.1.0"
 scalacache = "0.28.0"
 
 [libraries]
