@@ -1,6 +1,6 @@
 [versions]
 alchemist = "24.1.14"
-kotlin = "1.7.20"
+kotlin = "1.7.21"
 scala = "2.13.10"
 breeze = "2.1.0"
 scalacache = "0.28.0"
