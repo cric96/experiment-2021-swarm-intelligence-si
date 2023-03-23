@@ -1,7 +1,7 @@
 [versions]
-alchemist = "22.0.0"
-kotlin = "1.7.10"
-scala = "2.13.8"
+alchemist = "24.1.15"
+kotlin = "1.7.21"
+scala = "2.13.10"
 breeze = "2.1.0"
 scalacache = "0.28.0"
 
@@ -22,7 +22,7 @@ utils-bundle = [ "scala-cache", "scala-compiler", "breeze-math" ]
 [plugins]
 gitSemVer = { id = "org.danilopianini.git-sensitive-semantic-versioning", version = "0.3.0" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlin-qa = { id = "org.danilopianini.gradle-kotlin-qa", version = "0.8.3" }
+kotlin-qa = { id = "org.danilopianini.gradle-kotlin-qa", version = "0.36.1" }
 scalafmt = { id = "cz.alenkacz.gradle.scalafmt", version = "1.16.2" }
-multiJvmTesting = { id = "org.danilopianini.multi-jvm-test-plugin", version = "0.2.2" }
+multiJvmTesting = { id = "org.danilopianini.multi-jvm-test-plugin", version = "0.4.13" }
 taskTree = { id = "com.dorongold.task-tree", version = "2.1.0" }
